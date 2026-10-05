@@ -1,0 +1,62 @@
+.task-hours {
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  padding: 8px 12px;
+  background: var(--background-secondary);
+}
+.task-hours-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; }
+.task-hours-total { font-size: 1.25em; font-weight: 600; color: var(--text-normal); }
+.task-hours-meta { color: var(--text-muted); font-size: var(--font-ui-small); }
+.task-hours-warn { color: var(--text-warning); font-size: var(--font-ui-small); }
+.task-hours-error { color: var(--text-error); font-size: var(--font-ui-small); margin-bottom: 6px; }
+.task-hours-empty { color: var(--text-faint); font-size: var(--font-ui-small); margin-top: 6px; }
+.task-hours-group {
+  display: flex; justify-content: space-between; gap: 8px;
+  margin-top: 10px; padding-bottom: 2px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-weight: 600; font-size: var(--font-ui-small);
+}
+.task-hours-group-total { color: var(--text-muted); font-weight: normal; }
+.task-hours-list { list-style: none; padding-left: 0; margin: 6px 0 0; }
+.task-hours-item { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; padding: 2px 0; }
+.task-hours-item input[type="checkbox"] { margin: 0; }
+.task-hours-item.is-done .task-hours-name { text-decoration: line-through; color: var(--text-faint); }
+.task-hours-name { cursor: pointer; color: var(--text-normal); text-decoration: none; }
+.task-hours-name:hover { color: var(--text-accent); }
+.task-hours-fields { display: inline-flex; flex-wrap: wrap; gap: 2px 10px; color: var(--text-muted); font-size: var(--font-ui-small); margin-left: auto; }
+.task-hours-est.is-missing { color: var(--text-warning); }
+.task-hours-fields .is-overdue { color: var(--text-error); font-weight: 600; }
+.task-hours-file { color: var(--text-faint); }
+
+/* ---- 編集できるチップ ---- */
+.task-hours-chip { cursor: pointer; border-radius: var(--radius-s); padding: 0 3px; white-space: nowrap; }
+.task-hours-chip:hover, .task-hours-chip:focus-visible { background: var(--background-modifier-hover); color: var(--text-normal); }
+.task-hours-chip.is-empty { color: var(--text-faint); }
+.task-hours-chip.is-overdue { color: var(--text-error); font-weight: 600; }
+.task-hours-input { font-size: var(--font-ui-small); height: auto; padding: 0 4px; }
+.task-hours-input-est { width: 6em; }
+
+/* ---- ダッシュボード ---- */
+.task-hours-dashboard { padding: 10px 12px; }
+.task-hours-folder { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.task-hours-folder-input { flex: 1; min-width: 0; }
+.task-hours-wait { line-height: 1.6; }
+.task-hours-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin-bottom: 12px; }
+.task-hours-tile {
+  border: 1px solid var(--background-modifier-border); border-radius: var(--radius-m);
+  padding: 6px 8px; cursor: pointer; background: var(--background-primary);
+}
+.task-hours-tile:hover { border-color: var(--interactive-accent); }
+.task-hours-tile.is-active { border-color: var(--interactive-accent); box-shadow: inset 0 0 0 1px var(--interactive-accent); }
+.task-hours-tile-label { font-size: var(--font-ui-smaller); color: var(--text-muted); }
+.task-hours-tile-total { font-size: 1.1em; font-weight: 600; font-variant-numeric: tabular-nums; }
+.task-hours-tile-count { font-size: var(--font-ui-smaller); color: var(--text-faint); }
+.task-hours-tile.is-alert .task-hours-tile-label { color: var(--text-warning); }
+.task-hours-dashboard .task-hours-item { align-items: flex-start; }
+.task-hours-dashboard .task-hours-fields { margin-left: 22px; width: 100%; }
+.task-hours-tip { margin-top: 12px; font-size: var(--font-ui-smaller); color: var(--text-faint); }
+
+/* ---- 日付候補 ---- */
+.task-hours-suggest { display: flex; gap: 10px; align-items: baseline; }
+.task-hours-suggest-date { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.task-hours-suggest-kind { margin-left: auto; font-size: var(--font-ui-smaller); color: var(--text-faint); }
