@@ -99,6 +99,7 @@ const en = {
 	"add.namePh": "e.g. Draft the proposal",
 	"add.estimate": "Estimate",
 	"add.estimateDesc": "e.g. 2h / 30m / 1h30m / 1.5h",
+	"add.estimatePh": "1h30m",
 	"add.start": "Start date",
 	"add.due": "Due date",
 	"add.submit": "Add",
@@ -114,6 +115,7 @@ const en = {
 	"set.startChar": "Start date symbol",
 	"set.startCharDesc": "Full-width characters work too.",
 	"set.dueChar": "Due date symbol",
+	"set.needSymbol": "Enter a symbol",
 	"set.bare": "Read “2h” / “30m” on its own as an estimate",
 	"set.bareDesc": "When off, only parenthesized estimates like “(2h)” are converted.",
 	"set.dayFirst": "Read short dates as day/month",
@@ -204,6 +206,7 @@ const ja: Record<Key, string> = {
 	"add.namePh": "例: 企画書のドラフト",
 	"add.estimate": "見積時間",
 	"add.estimateDesc": "例: 2h / 30m / 1h30m / 1.5h / 2時間 / 90分",
+	"add.estimatePh": "1h30m",
 	"add.start": "開始予定日",
 	"add.due": "納期",
 	"add.submit": "追加",
@@ -218,6 +221,7 @@ const ja: Record<Key, string> = {
 	"set.startChar": "開始日の記号",
 	"set.startCharDesc": "全角で打っても同じように扱います。",
 	"set.dueChar": "納期の記号",
+	"set.needSymbol": "記号を入力してください",
 	"set.bare": "「2h」「30分」だけでも見積として読む",
 	"set.bareDesc": "オフにすると「(2h)」のように括弧で囲んだときだけ見積として扱います。",
 	"set.dayFirst": "短い日付を「日/月」として読む",
@@ -229,7 +233,7 @@ const ja: Record<Key, string> = {
 
 export function t(key: Key, vars: Record<string, string | number> = {}): string {
 	const s = (current === "ja" ? ja : en)[key] ?? en[key];
-	return s.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ""));
+	return s.replace(/\{(\w+)\}/g, (_: string, k: string) => String(vars[k] ?? ""));
 }
 
 const WD_EN = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];

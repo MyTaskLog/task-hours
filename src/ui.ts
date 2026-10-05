@@ -119,7 +119,7 @@ function estimateChip(parent: HTMLElement, t: Task, onSet: (v: string | null) =>
 	const edit = (e: Event) => {
 		stop(e);
 		const input = createEl("input", { type: "text", cls: "task-hours-input task-hours-input-est" });
-		input.placeholder = "1h30m";
+		input.placeholder = tr("add.estimatePh");
 		const orig = t.minutes === null ? "" : estimateText(t.raw) ?? "";
 		input.value = orig;
 		chip.replaceWith(input);
@@ -212,22 +212,22 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 		cb.checked = t.done;
 		cb.addEventListener("click", (e) => {
 			stop(e);
-			toggleDone(app, t);
+			void toggleDone(app, t);
 		});
 		const name = li.createEl("a", { cls: "task-hours-name", text: t.name, attr: { "aria-label": tr("list.open") } });
 		name.addEventListener("click", (e) => {
 			stop(e);
-			openTask(app, t);
+			void openTask(app, t);
 		});
 		const meta = li.createSpan({ cls: "task-hours-fields" });
-		estimateChip(meta, t, (v) => setField(app, t, "estimate", v));
-		dateChip(meta, "🛫", t.start, "task-hours-start", (v) => setField(app, t, "start", v));
+		estimateChip(meta, t, (v) => void setField(app, t, "estimate", v));
+		dateChip(meta, "🛫", t.start, "task-hours-start", (v) => void setField(app, t, "start", v));
 		dateChip(
 			meta,
 			"📅",
 			t.due,
 			"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
-			(v) => setField(app, t, "due", v)
+			(v) => void setField(app, t, "due", v)
 		);
 		if (opt.showFile) {
 			meta.createSpan({ cls: "task-hours-file", text: t.path.replace(/\.md$/, "").split("/").pop() ?? "" });

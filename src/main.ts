@@ -9,6 +9,7 @@ import {
 	Plugin,
 	PluginSettingTab,
 	Setting,
+	SettingDefinitionItem,
 	TFile,
 	WorkspaceLeaf,
 	debounce,
@@ -105,11 +106,12 @@ export default class TaskHoursPlugin extends Plugin {
 			leaf = this.app.workspace.getRightLeaf(false) ?? this.app.workspace.getLeaf(true);
 			await leaf.setViewState({ type: DASHBOARD_VIEW, active: true });
 		}
-		this.app.workspace.revealLeaf(leaf);
+		await this.app.workspace.revealLeaf(leaf);
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const saved = (await this.loadData()) as Partial<TaskHoursSettings> | null;
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
 	}
 	async saveSettings() {
 		await this.saveData(this.settings);
@@ -163,7 +165,7 @@ class AddTaskModal extends Modal {
 		new Setting(contentEl)
 			.setName(tr("add.estimate"))
 			.setDesc(tr("add.estimateDesc"))
-			.addText((t) => t.setPlaceholder("1h30m").onChange((v) => (this.estimate = v)));
+			.addText((t) => t.setPlaceholder(tr("add.estimatePh")).onChange((v) => (this.estimate = v)));
 		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
 			t.inputEl.type = "date";
 			t.onChange((v) => (this.start = v));
@@ -224,7 +226,7 @@ class TaskHoursBlock extends MarkdownRenderChild {
 	}
 
 	onload() {
-		this.render();
+		void this.render();
 		this.registerEvent(this.app.metadataCache.on("changed", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("rename", () => this.refresh()));
@@ -279,47 +281,90 @@ class TaskHoursBlock extends MarkdownRenderChild {
 
 // ---------- Settings ----------
 
+type SettingKey = "autoConvert" | "dateSuggest" | "startChar" | "dueChar" | "bareEstimate" | "dayFirst" | "language";
+
 class TaskHoursSettingTab extends PluginSettingTab {
-	constructor(app: App, private plugin: TaskHoursPlugin) {
+	constructor(
+		app: App,
+		private plugin: TaskHoursPlugin
+	) {
 		super(app, plugin);
 	}
-	display() {
+
+	// Obsidian 1.13+: declarative settings (also searchable from the settings search)
+	getSettingDefinitions(): SettingDefinitionItem<SettingKey>[] {
+		const notEmpty = (v: string) => (v.trim() ? undefined : tr("set.needSymbol"));
+		return [
+			{ name: tr("set.auto"), desc: tr("set.autoDesc"), control: { type: "toggle", key: "autoConvert" } },
+			{ name: tr("set.suggest"), desc: tr("set.suggestDesc"), control: { type: "toggle", key: "dateSuggest" } },
+			{
+				name: tr("set.startChar"),
+				desc: tr("set.startCharDesc"),
+				control: { type: "text", key: "startChar", placeholder: "@", validate: notEmpty },
+			},
+			{ name: tr("set.dueChar"), control: { type: "text", key: "dueChar", placeholder: "!", validate: notEmpty } },
+			{ name: tr("set.bare"), desc: tr("set.bareDesc"), control: { type: "toggle", key: "bareEstimate" } },
+			{ name: tr("set.dayFirst"), desc: tr("set.dayFirstDesc"), control: { type: "toggle", key: "dayFirst" } },
+			{
+				name: tr("set.language"),
+				desc: tr("set.languageDesc"),
+				control: {
+					type: "dropdown",
+					key: "language",
+					options: { auto: tr("set.langAuto"), en: "English", ja: "日本語" },
+				},
+			},
+		];
+	}
+
+	getControlValue(key: string): unknown {
+		return this.plugin.settings[key as SettingKey];
+	}
+
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		const s = this.plugin.settings as unknown as Record<string, unknown>;
+		s[key] = typeof value === "string" && (key === "startChar" || key === "dueChar") ? value.trim() : value;
+		await this.plugin.saveSettings();
+	}
+
+	// Fallback for Obsidian versions before 1.13, which don't use getSettingDefinitions()
+	display(): void {
 		const { containerEl } = this;
 		const s = this.plugin.settings;
-		const save = () => this.plugin.saveSettings();
+		const save = () => {
+			void this.plugin.saveSettings();
+		};
 		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName(tr("set.auto"))
-			.setDesc(tr("set.autoDesc"))
-			.addToggle((t) => t.setValue(s.autoConvert).onChange((v) => ((s.autoConvert = v), save())));
-		new Setting(containerEl)
-			.setName(tr("set.suggest"))
-			.setDesc(tr("set.suggestDesc"))
-			.addToggle((t) => t.setValue(s.dateSuggest).onChange((v) => ((s.dateSuggest = v), save())));
-		new Setting(containerEl)
-			.setName(tr("set.startChar"))
-			.setDesc(tr("set.startCharDesc"))
-			.addText((t) =>
-				t.setValue(s.startChar).onChange((v) => {
-					if (v.trim()) (s.startChar = v.trim()), save();
-				})
-			);
-		new Setting(containerEl)
-			.setName(tr("set.dueChar"))
-			.addText((t) =>
-				t.setValue(s.dueChar).onChange((v) => {
-					if (v.trim()) (s.dueChar = v.trim()), save();
-				})
-			);
-		new Setting(containerEl)
-			.setName(tr("set.bare"))
-			.setDesc(tr("set.bareDesc"))
-			.addToggle((t) => t.setValue(s.bareEstimate).onChange((v) => ((s.bareEstimate = v), save())));
-		new Setting(containerEl)
-			.setName(tr("set.dayFirst"))
-			.setDesc(tr("set.dayFirstDesc"))
-			.addToggle((t) => t.setValue(s.dayFirst).onChange((v) => ((s.dayFirst = v), save())));
+		const toggle = (name: string, desc: string, key: "autoConvert" | "dateSuggest" | "bareEstimate" | "dayFirst") =>
+			new Setting(containerEl)
+				.setName(name)
+				.setDesc(desc)
+				.addToggle((t) =>
+					t.setValue(s[key]).onChange((v) => {
+						s[key] = v;
+						save();
+					})
+				);
+		const symbol = (name: string, desc: string, key: "startChar" | "dueChar") =>
+			new Setting(containerEl)
+				.setName(name)
+				.setDesc(desc)
+				.addText((t) =>
+					t.setValue(s[key]).onChange((v) => {
+						if (v.trim()) {
+							s[key] = v.trim();
+							save();
+						}
+					})
+				);
+
+		toggle(tr("set.auto"), tr("set.autoDesc"), "autoConvert");
+		toggle(tr("set.suggest"), tr("set.suggestDesc"), "dateSuggest");
+		symbol(tr("set.startChar"), tr("set.startCharDesc"), "startChar");
+		symbol(tr("set.dueChar"), "", "dueChar");
+		toggle(tr("set.bare"), tr("set.bareDesc"), "bareEstimate");
+		toggle(tr("set.dayFirst"), tr("set.dayFirstDesc"), "dayFirst");
 		new Setting(containerEl)
 			.setName(tr("set.language"))
 			.setDesc(tr("set.languageDesc"))
@@ -329,8 +374,10 @@ class TaskHoursSettingTab extends PluginSettingTab {
 					.addOption("en", "English")
 					.addOption("ja", "日本語")
 					.setValue(s.language)
-					.onChange((v) => ((s.language = v as TaskHoursSettings["language"]), save()))
+					.onChange((v) => {
+						s.language = v as TaskHoursSettings["language"];
+						save();
+					})
 			);
 	}
 }
-

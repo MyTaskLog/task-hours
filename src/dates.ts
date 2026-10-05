@@ -7,8 +7,8 @@ import { fmt } from "./parse";
 
 /** Full-width ASCII and ideographic space → half-width (string length unchanged) */
 export function toHalfWidth(s: string): string {
-	return s.replace(/[！-～　]/g, (c) =>
-		c === "　" ? " " : String.fromCharCode(c.charCodeAt(0) - 0xfee0)
+	return s.replace(/[\uFF01-\uFF5E\u3000]/g, (c) =>
+		c === "\u3000" ? " " : String.fromCharCode(c.charCodeAt(0) - 0xfee0)
 	);
 }
 

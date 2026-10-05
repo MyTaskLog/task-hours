@@ -1,7 +1,7 @@
 {
   "id": "task-hours",
   "name": "Task Hours",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "minAppVersion": "1.8.7",
   "description": "Add time estimates to tasks and see total hours by start date, with quick entry like “2h @tomorrow !fri” and a folder dashboard.",
   "author": "MyTaskLog",

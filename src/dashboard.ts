@@ -88,12 +88,14 @@ export class DashboardView extends ItemView {
 		new FolderSuggest(this.app, this.input).onSelect((v, _e) => {
 			this.input.value = v;
 			this.input.blur();
-			this.setFolder(v);
+			void this.setFolder(v);
 		});
 		this.input.addEventListener("keydown", (e) => {
-			if (e.key === "Enter" && !e.isComposing) this.commitTyped();
+			if (e.key === "Enter" && !e.isComposing) void this.commitTyped();
 		});
-		this.input.addEventListener("change", () => this.commitTyped());
+		this.input.addEventListener("change", () => {
+			void this.commitTyped();
+		});
 
 		this.bodyEl = root.createDiv();
 		this.registerEvent(this.app.metadataCache.on("changed", () => this.refresh()));
@@ -103,11 +105,11 @@ export class DashboardView extends ItemView {
 		await this.renderBody();
 	}
 
-	private commitTyped() {
+	private async commitTyped(): Promise<void> {
 		const v = this.input.value.trim();
 		if (v === "" || v === rootLabel() || v === "/") return this.setFolder(v === "" ? null : rootLabel());
 		const f = this.app.vault.getAbstractFileByPath(v.replace(/^\/+|\/+$/g, ""));
-		if (f instanceof TFolder) this.setFolder(f.path);
+		if (f instanceof TFolder) await this.setFolder(f.path);
 	}
 
 	private async setFolder(v: string | null) {
@@ -143,7 +145,7 @@ export class DashboardView extends ItemView {
 			tile.createDiv({ cls: "task-hours-tile-count", text: tr("sum.count", { n: ts.length }) });
 			const select = () => {
 				this.period = p.id;
-				this.renderBody();
+				void this.renderBody();
 			};
 			tile.addEventListener("click", select);
 			tile.addEventListener("keydown", (e) => e.key === "Enter" && select());

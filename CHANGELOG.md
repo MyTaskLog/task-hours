@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.2
+
+- Settings now use Obsidian's declarative settings API (Obsidian 1.13+), so they show up in the settings search. Older Obsidian versions keep the previous settings screen.
+- Pin the Obsidian API package version so the lockfile stays in sync.
+- Code clean-up from the community directory's automated review (promise handling, whitespace).
+
 ## 1.0.1
 
 - Fix the author link in the plugin manifest.
