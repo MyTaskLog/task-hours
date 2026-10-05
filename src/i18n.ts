@@ -131,9 +131,10 @@ const en = {
 type Key = keyof typeof en;
 
 const ja: Record<Key, string> = {
-	"dur.hm": "{h}時間{m}分",
-	"dur.h": "{h}時間",
-	"dur.m": "{m}分",
+	// Durations use h / m in every language
+	"dur.hm": "{h}h {m}m",
+	"dur.h": "{h}h",
+	"dur.m": "{m}m",
 	untitled: "(無題)",
 
 	"q.badLine": "解釈できない行: {line}",
