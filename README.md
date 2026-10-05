@@ -121,6 +121,12 @@ Date filters: `today` `tomorrow` `yesterday` · `this week` `next week` `last we
 - When used with Tasks, ⏱️ must come before 🛫 and 📅. Quick entry, the form, and list edits all place it there for you.
 - The interface follows Obsidian's language (English or Japanese). You can override it in settings.
 
+## Privacy
+
+Task Hours works entirely inside your vault. It makes no network requests and sends nothing anywhere.
+
+To total tasks across a folder or the whole vault, it lists the Markdown files in your vault and reads the ones that contain tasks. It only changes a note when you ask it to: converting quick-entry text on a task line, or editing a date, estimate or checkbox from a Task Hours list.
+
 ## Installation
 
 From **Settings → Community plugins → Browse**, search for “Task Hours”.
