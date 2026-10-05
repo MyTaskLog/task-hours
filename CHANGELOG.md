@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Picking a date from the @ / ! suggestions now also converts the rest of the line's quick entry (for example `40min` → `⏱️ 40min`) straight away.
+- Converting a line when the cursor leaves it now waits for an input method (such as Japanese input) to finish instead of skipping the line.
+- No stray space is left behind when quick entry follows a full-width space.
+
 ## 1.0.2
 
 - Settings now use Obsidian's declarative settings API (Obsidian 1.13+), so they show up in the settings search. Older Obsidian versions keep the previous settings screen.

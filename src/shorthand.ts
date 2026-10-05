@@ -79,9 +79,11 @@ export function convertShorthand(line: string, opt: ShorthandOptions, today: Dat
 	const chosen = new Map<Field, Hit>();
 	for (const h of hits.sort((a, b) => a.from - b.from)) chosen.set(h.field, h);
 
-	// remove the shorthand tokens from the text (from the end)
+	// remove the shorthand tokens from the text (from the end), leaving a single
+	// space where each one was (also absorbing full-width spaces around it)
 	let nb = body;
-	for (const h of [...hits].sort((a, b) => b.from - a.from)) nb = nb.slice(0, h.from) + " " + nb.slice(h.to);
+	for (const h of [...hits].sort((a, b) => b.from - a.from)) nb = nb.slice(0, h.from) + "\uE000" + nb.slice(h.to);
+	nb = nb.replace(/[ \t\u3000]*\uE000[ \t\u3000\uE000]*/g, " ");
 	let out = head + nb;
 	for (const f of ["estimate", "start", "due"] as Field[]) {
 		const h = chosen.get(f);

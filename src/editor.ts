@@ -17,8 +17,16 @@ interface DateItem {
  * Put the date field into the line and return where the cursor should go:
  * right after the date, followed by a space so the next @ / ! can be typed straight away.
  */
-export function insertDateField(line: string, field: Field, date: string): { text: string; ch: number } {
+export function insertDateField(
+	line: string,
+	field: Field,
+	date: string,
+	convert?: (line: string) => string | null
+): { text: string; ch: number } {
 	let text = setLineField(line, field, date);
+	// Also convert any other shorthand already on the line (e.g. "40min"), so the
+	// line is complete right away instead of waiting for the cursor to leave it.
+	if (convert) text = convert(text) ?? text;
 	const token = `${field === "start" ? "🛫" : "📅"} ${date}`;
 	const idx = text.indexOf(token);
 	if (idx < 0) return { text, ch: text.length };
@@ -113,7 +121,9 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 		const apply = (date: string) => {
 			const line = editor.getLine(start.line);
 			const removed = line.slice(0, start.ch) + line.slice(end.ch);
-			const { text, ch } = insertDateField(removed, field, date);
+			const s = this.plugin.settings;
+			const convert = s.autoConvert ? (l: string) => convertShorthand(l, s, new Date()) : undefined;
+			const { text, ch } = insertDateField(removed, field, date, convert);
 			editor.replaceRange(text, { line: start.line, ch: 0 }, { line: start.line, ch: line.length });
 			editor.setCursor({ line: start.line, ch });
 			editor.focus();
@@ -185,8 +195,13 @@ export function shorthandExtension(plugin: TaskHoursPlugin) {
 	);
 }
 
-function convertLine(plugin: TaskHoursPlugin, view: EditorView, lineNo: number) {
-	if (view.composing) return;
+function convertLine(plugin: TaskHoursPlugin, view: EditorView, lineNo: number, tries = 0) {
+	// An IME (e.g. Japanese input) may already be composing on the next line.
+	// Editing the document then would disturb it, so wait until it finishes.
+	if (view.composing) {
+		if (tries < 100) window.setTimeout(() => convertLine(plugin, view, lineNo, tries + 1), 200);
+		return;
+	}
 	const doc = view.state.doc;
 	if (lineNo < 1 || lineNo > doc.lines) return;
 	const line = doc.line(lineNo);
