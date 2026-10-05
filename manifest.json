@@ -5,6 +5,6 @@
   "minAppVersion": "1.8.7",
   "description": "Add time estimates to tasks and see total hours by start date, with quick entry like “2h @tomorrow !fri” and a folder dashboard.",
   "author": "MyTaskLog",
-  "authorUrl": "https://github.com/YOUR_GITHUB_ID",
+  "authorUrl": "https://github.com/MyTaskLog",
   "isDesktopOnly": false
 }
