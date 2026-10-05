@@ -14,13 +14,13 @@ Tasks is not required, but the two work well together.
 
 ## Quick entry
 
-You don't need to type emoji. Write:
+You don't need to type emoji. In a task, type `+` for the estimate, `@` for the start date and `!` for the due date. Each one opens a list of suggestions — pick one with ↑↓ and Enter and it's written in the right format straight away:
 
 ```markdown
-- [ ] Lunch with Sam 2h @tomorrow !fri
+- [ ] Lunch with Sam +2h @tomorrow !fri
 ```
 
-Press Enter, or move to another line, and it becomes:
+becomes
 
 ```markdown
 - [ ] Lunch with Sam ⏱️ 2h 🛫 2026-10-06 📅 2026-10-09
@@ -28,11 +28,12 @@ Press Enter, or move to another line, and it becomes:
 
 | Type | Means |
 |---|---|
-| `2h` `30m` `1h30m` `1.5h` `(2h)` | Estimate |
+| `+` | Estimate. `+` alone lists 15m, 30m, 1h, 2h…; `+40` → 40 min; `+2` → 2 h; `+1.5` → 1 h 30 min; `+2h` `+1h30m` `+40m` as written |
 | `@tomorrow` | Start date |
 | `!fri` | Due date |
 
-- Typing `@` or `!` in a task shows date suggestions. Use ↑↓ and Enter, or choose **Pick from calendar…**.
+- `@` and `!` suggest dates; you can also choose **Pick from calendar…**.
+- You can skip the list and just keep typing: `+40 @tomorrow` is converted when you press Enter or move to another line. A plain `2h`, `30m` or `(2h)` also counts as an estimate there.
 - Add `@nextmon` to a task that already has a start date to move it (handy for rescheduling).
 - If something gets converted by mistake, undo with Ctrl/Cmd+Z.
 

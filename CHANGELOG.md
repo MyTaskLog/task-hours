@@ -2,8 +2,9 @@
 
 ## 1.0.3
 
+- New: type `+` in a task to pick an estimate, just like `@` and `!` for dates. `+` alone lists common estimates; `+40` → 40 min, `+2` → 2 h, `+1.5` → 1 h 30 min, `+2h` / `+1h30m` as written. The symbol can be changed in settings.
 - Picking a date from the @ / ! suggestions now also converts the rest of the line's quick entry (for example `40min` → `⏱️ 40min`) straight away.
-- Converting a line when the cursor leaves it now waits for an input method (such as Japanese input) to finish instead of skipping the line.
+- Converting a line when the cursor leaves it now waits briefly for an input method (such as Japanese input) instead of skipping the line.
 - No stray space is left behind when quick entry follows a full-width space.
 
 ## 1.0.2

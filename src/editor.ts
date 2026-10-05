@@ -1,21 +1,23 @@
-// Editor helpers: date suggestions, and converting shorthand when the cursor leaves a line
+// Editor helpers: date and estimate suggestions, and converting shorthand when the cursor leaves a line
 
 import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
 import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, Modal, Setting, TFile } from "obsidian";
 import { DatePreset, datePresets, labelDate, parseDateWord, toHalfWidth } from "./dates";
 import { t as tr } from "./i18n";
 import type TaskHoursPlugin from "./main";
-import { Field, TASK_RE, setLineField } from "./parse";
-import { convertShorthand, isInFence } from "./shorthand";
+import { Field, TASK_RE, formatDuration, setLineField } from "./parse";
+import { convertShorthand, durationValue, estimateCandidates, isInFence } from "./shorthand";
 
 interface DateItem {
 	label: string;
 	date: string | null; // null = open the date picker
 }
 
+const FIELD_ICON: Record<Field, string> = { estimate: "⏱️", start: "🛫", due: "📅" };
+
 /**
- * Put the date field into the line and return where the cursor should go:
- * right after the date, followed by a space so the next @ / ! can be typed straight away.
+ * Put a field (date or estimate) into the line and return where the cursor should go:
+ * right after the value, followed by a space so the next entry can be typed straight away.
  */
 export function insertDateField(
 	line: string,
@@ -27,7 +29,7 @@ export function insertDateField(
 	// Also convert any other shorthand already on the line (e.g. "40min"), so the
 	// line is complete right away instead of waiting for the cursor to leave it.
 	if (convert) text = convert(text) ?? text;
-	const token = `${field === "start" ? "🛫" : "📅"} ${date}`;
+	const token = `${FIELD_ICON[field]} ${date}`;
 	const idx = text.indexOf(token);
 	if (idx < 0) return { text, ch: text.length };
 	const after = idx + token.length;
@@ -134,6 +136,75 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 	}
 }
 
+interface EstimateItem {
+	minutes: number;
+}
+
+/** Typing + in a task line suggests estimates (+, +40, +2h, +1h30 …) */
+export class EstimateSuggest extends EditorSuggest<EstimateItem> {
+	constructor(
+		app: App,
+		private plugin: TaskHoursPlugin
+	) {
+		super(app);
+		this.limit = 10;
+		this.setInstructions([
+			{ command: "↑↓", purpose: tr("sug.select") },
+			{ command: "↵", purpose: tr("sug.confirm") },
+			{ command: "esc", purpose: tr("sug.close") },
+		]);
+	}
+
+	onTrigger(cursor: EditorPosition, editor: Editor, _file: TFile | null): EditorSuggestTriggerInfo | null {
+		const s = this.plugin.settings;
+		if (!s.dateSuggest) return null;
+		const ch = toHalfWidth(s.estimateChar);
+		if (!ch) return null;
+		const line = editor.getLine(cursor.line);
+		const tm = line.match(TASK_RE);
+		if (!tm) return null;
+		const bodyStart = line.length - tm[2].length;
+		const before = toHalfWidth(line.slice(0, cursor.ch));
+		const idx = before.lastIndexOf(ch);
+		if (idx < bodyStart || idx < 0) return null;
+		if (idx > 0 && !triggerBoundary(before[idx - 1], s)) return null;
+		const query = before.slice(idx + ch.length);
+		if (/\s/.test(query)) return null;
+		return { start: { line: cursor.line, ch: idx }, end: cursor, query: line.slice(idx + ch.length, cursor.ch) };
+	}
+
+	getSuggestions(ctx: EditorSuggestContext): EstimateItem[] {
+		return estimateCandidates(ctx.query).map((minutes) => ({ minutes }));
+	}
+
+	renderSuggestion(item: EstimateItem, el: HTMLElement) {
+		el.addClass("task-hours-suggest");
+		el.createSpan({ cls: "task-hours-suggest-label", text: `⏱️ ${formatDuration(item.minutes)}` });
+		el.createSpan({ cls: "task-hours-suggest-kind", text: tr("sug.estimate") });
+	}
+
+	selectSuggestion(item: EstimateItem, _evt: MouseEvent | KeyboardEvent) {
+		const ctx = this.context;
+		if (!ctx) return;
+		const { editor, start, end } = ctx;
+		this.close();
+		const line = editor.getLine(start.line);
+		const removed = line.slice(0, start.ch) + line.slice(end.ch);
+		const s = this.plugin.settings;
+		const convert = s.autoConvert ? (l: string) => convertShorthand(l, s, new Date()) : undefined;
+		const { text, ch } = insertDateField(removed, "estimate", durationValue(item.minutes), convert);
+		editor.replaceRange(text, { line: start.line, ch: 0 }, { line: start.line, ch: line.length });
+		editor.setCursor({ line: start.line, ch });
+		editor.focus();
+	}
+}
+
+/** A trigger symbol only counts when it doesn't follow a letter/digit (a@b.com, C++) or another trigger */
+function triggerBoundary(prev: string, s: TaskHoursPlugin["settings"]): boolean {
+	if (/[A-Za-z0-9._%+-]/.test(prev)) return false;
+	return ![s.startChar, s.dueChar, s.estimateChar].map(toHalfWidth).includes(prev);
+}
+
 class DatePickerModal extends Modal {
 	constructor(app: App, private field: Field, private onPick: (d: string) => void) {
 		super(app);
@@ -198,8 +269,10 @@ export function shorthandExtension(plugin: TaskHoursPlugin) {
 function convertLine(plugin: TaskHoursPlugin, view: EditorView, lineNo: number, tries = 0) {
 	// An IME (e.g. Japanese input) may already be composing on the next line.
 	// Editing the document then would disturb it, so wait until it finishes.
-	if (view.composing) {
-		if (tries < 100) window.setTimeout(() => convertLine(plugin, view, lineNo, tries + 1), 200);
+	// Some IMEs keep reporting "composing" for a long time, so only wait briefly:
+	// the edit is on a different line from the composition anyway.
+	if (view.composing && tries < 10) {
+		window.setTimeout(() => convertLine(plugin, view, lineNo, tries + 1), 200);
 		return;
 	}
 	const doc = view.state.doc;

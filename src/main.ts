@@ -16,7 +16,7 @@ import {
 	getLanguage,
 } from "obsidian";
 import { DASHBOARD_VIEW, DashboardView } from "./dashboard";
-import { DateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
+import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
 import { Lang, setLang, t as tr } from "./i18n";
 import { Query, buildTaskLine, filterTasks, formatDuration, parseDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
@@ -34,6 +34,7 @@ export interface TaskHoursSettings extends ShorthandOptions {
 const DEFAULT_SETTINGS: TaskHoursSettings = {
 	startChar: "@",
 	dueChar: "!",
+	estimateChar: "+",
 	bareEstimate: true,
 	autoConvert: true,
 	dateSuggest: true,
@@ -57,6 +58,7 @@ export default class TaskHoursPlugin extends Plugin {
 		});
 		this.registerView(DASHBOARD_VIEW, (leaf: WorkspaceLeaf) => new DashboardView(leaf, this));
 		this.registerEditorSuggest(new DateSuggest(this.app, this));
+		this.registerEditorSuggest(new EstimateSuggest(this.app, this));
 		this.registerEditorExtension(shorthandExtension(this));
 		this.addSettingTab(new TaskHoursSettingTab(this.app, this));
 
@@ -281,7 +283,15 @@ class TaskHoursBlock extends MarkdownRenderChild {
 
 // ---------- Settings ----------
 
-type SettingKey = "autoConvert" | "dateSuggest" | "startChar" | "dueChar" | "bareEstimate" | "dayFirst" | "language";
+type SettingKey =
+	| "autoConvert"
+	| "dateSuggest"
+	| "startChar"
+	| "dueChar"
+	| "estimateChar"
+	| "bareEstimate"
+	| "dayFirst"
+	| "language";
 
 class TaskHoursSettingTab extends PluginSettingTab {
 	constructor(
@@ -303,6 +313,11 @@ class TaskHoursSettingTab extends PluginSettingTab {
 				control: { type: "text", key: "startChar", placeholder: "@", validate: notEmpty },
 			},
 			{ name: tr("set.dueChar"), control: { type: "text", key: "dueChar", placeholder: "!", validate: notEmpty } },
+			{
+				name: tr("set.estimateChar"),
+				desc: tr("set.estimateCharDesc"),
+				control: { type: "text", key: "estimateChar", placeholder: "+", validate: notEmpty },
+			},
 			{ name: tr("set.bare"), desc: tr("set.bareDesc"), control: { type: "toggle", key: "bareEstimate" } },
 			{ name: tr("set.dayFirst"), desc: tr("set.dayFirstDesc"), control: { type: "toggle", key: "dayFirst" } },
 			{
@@ -323,7 +338,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
 		const s = this.plugin.settings as unknown as Record<string, unknown>;
-		s[key] = typeof value === "string" && (key === "startChar" || key === "dueChar") ? value.trim() : value;
+		s[key] = typeof value === "string" && (key === "startChar" || key === "dueChar" || key === "estimateChar") ? value.trim() : value;
 		await this.plugin.saveSettings();
 	}
 
@@ -346,7 +361,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 						save();
 					})
 				);
-		const symbol = (name: string, desc: string, key: "startChar" | "dueChar") =>
+		const symbol = (name: string, desc: string, key: "startChar" | "dueChar" | "estimateChar") =>
 			new Setting(containerEl)
 				.setName(name)
 				.setDesc(desc)
@@ -363,6 +378,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 		toggle(tr("set.suggest"), tr("set.suggestDesc"), "dateSuggest");
 		symbol(tr("set.startChar"), tr("set.startCharDesc"), "startChar");
 		symbol(tr("set.dueChar"), "", "dueChar");
+		symbol(tr("set.estimateChar"), tr("set.estimateCharDesc"), "estimateChar");
 		toggle(tr("set.bare"), tr("set.bareDesc"), "bareEstimate");
 		toggle(tr("set.dayFirst"), tr("set.dayFirstDesc"), "dayFirst");
 		new Setting(containerEl)
