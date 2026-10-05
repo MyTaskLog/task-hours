@@ -3,7 +3,8 @@
 ## 1.0.2
 
 - Settings now use Obsidian's declarative settings API (Obsidian 1.13+), so they show up in the settings search. Older Obsidian versions keep the previous settings screen.
-- Pin the Obsidian API package version so the lockfile stays in sync.
+- Fix the build setup: pin the Obsidian API and CodeMirror packages to matching versions and regenerate package-lock.json so a clean install works on every platform.
+- Update esbuild (build tool) to 0.28.
 - Code clean-up from the community directory's automated review (promise handling, whitespace).
 
 ## 1.0.1
