@@ -3,6 +3,8 @@
 ## 1.0.4
 
 - Dashboard: the "next days" tile now covers 14 days by default, and you can switch between 7, 14 and 30 days right above its list. Your choice is remembered.
+- Estimates can now be up to 9999 hours (for example `+400h` for a study plan). Before, anything over 168 hours didn't show up in the `+` suggestions and left a stray `+` behind.
+- `+400` without a unit now offers both 400 minutes and 400 hours.
 
 ## 1.0.3
 

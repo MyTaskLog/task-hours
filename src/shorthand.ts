@@ -49,11 +49,14 @@ export function durationValue(minutes: number): string {
 }
 
 const EST_PRESETS = [15, 30, 45, 60, 90, 120, 180, 240, 300, 360, 480];
+// Long tasks such as study plans can take hundreds of hours
+const MAX_ESTIMATE_MINUTES = 9999 * 60;
 
 /**
  * What a "+" entry could mean, best guess first (minutes).
  * ""      → common estimates
  * "40"    → 40 min, 40 h        (10 or more: minutes first)
+ * "400"   → 400 min, 400 h
  * "2"     → 2 h, 2 min          (under 10: hours first)
  * "1.5"   → 1 h 30 min
  * "2h"    → 2 h, then 2 h 15 / 30 / 45
@@ -65,7 +68,7 @@ export function estimateCandidates(query: string): number[] {
 	if (!q) return EST_PRESETS;
 	const out: number[] = [];
 	const add = (n: number | null) => {
-		if (n !== null && n > 0 && n <= 24 * 60 * 7 && !out.includes(n)) out.push(Math.round(n));
+		if (n !== null && n > 0 && n <= MAX_ESTIMATE_MINUTES && !out.includes(n)) out.push(Math.round(n));
 	};
 	if (/^\d+(\.\d+)?$/.test(q)) {
 		const n = parseFloat(q);
@@ -75,7 +78,7 @@ export function estimateCandidates(query: string): number[] {
 			if (Number.isInteger(n)) add(n);
 		} else {
 			add(n);
-			if (n <= 24) add(asHours);
+			add(asHours);
 		}
 		return out;
 	}
@@ -83,7 +86,8 @@ export function estimateCandidates(query: string): number[] {
 	const minutes = parseDuration(q);
 	if (minutes === null) return [];
 	add(minutes);
-	if (minutes % 60 === 0 && /^\d+(h|hrs?|hours?|時間)$/.test(q)) for (const x of [15, 30, 45]) add(minutes + x);
+	// Whole hours under a day: also offer the next quarter hours (2h → 2h 15m, 2h 30m, 2h 45m)
+	if (minutes % 60 === 0 && minutes < 24 * 60 && /^\d+(h|hrs?|hours?|時間)$/.test(q)) for (const x of [15, 30, 45]) add(minutes + x);
 	return out;
 }
 
