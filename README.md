@@ -66,8 +66,8 @@ There's also a form for adding tasks (task name, estimate, start, due), availabl
 Click the timer icon in the ribbon to open the dashboard in the right sidebar.
 
 1. Choose a folder at the top. Pick **/ (entire vault)** to include every note.
-2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 7 days · No start date**.
-3. Click a tile to list its tasks. *Next 7 days* is grouped by day with subtotals.
+2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 14 days · No start date**.
+3. Click a tile to list its tasks. The *next days* tile is grouped by day with subtotals, and a **7 / 14 / 30 days** switch above the list changes its range (remembered for next time).
 
 The folder is remembered, so next time it's one click.
 

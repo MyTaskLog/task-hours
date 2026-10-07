@@ -15,7 +15,7 @@ import {
 	debounce,
 	getLanguage,
 } from "obsidian";
-import { DASHBOARD_VIEW, DashboardView } from "./dashboard";
+import { DASHBOARD_VIEW, DashboardView, RANGE_DAYS, RangeDays } from "./dashboard";
 import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
 import { Lang, setLang, t as tr } from "./i18n";
 import { Query, buildTaskLine, filterTasks, formatDuration, parseDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
@@ -28,6 +28,7 @@ export interface TaskHoursSettings extends ShorthandOptions {
 	autoConvert: boolean; // convert shorthand when leaving a line
 	dateSuggest: boolean; // suggest dates after @ / !
 	dashboardFolder: string | null; // null = not chosen yet, "" = entire vault
+	dashboardDays: RangeDays; // length of the "next N days" tile
 	language: "auto" | Lang;
 }
 
@@ -40,6 +41,7 @@ const DEFAULT_SETTINGS: TaskHoursSettings = {
 	dateSuggest: true,
 	dayFirst: false,
 	dashboardFolder: null,
+	dashboardDays: 14,
 	language: "auto",
 };
 
@@ -114,6 +116,7 @@ export default class TaskHoursPlugin extends Plugin {
 	async loadSettings() {
 		const saved = (await this.loadData()) as Partial<TaskHoursSettings> | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		if (!RANGE_DAYS.includes(this.settings.dashboardDays)) this.settings.dashboardDays = DEFAULT_SETTINGS.dashboardDays;
 	}
 	async saveSettings() {
 		await this.saveData(this.settings);

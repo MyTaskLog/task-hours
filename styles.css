@@ -60,3 +60,10 @@
 .task-hours-suggest { display: flex; gap: 10px; align-items: baseline; }
 .task-hours-suggest-date { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .task-hours-suggest-kind { margin-left: auto; font-size: var(--font-ui-smaller); color: var(--text-faint); }
+
+/* ---- 7 / 14 / 30 days switch ---- */
+.task-hours-range { display: inline-flex; gap: 0; margin: 0 0 8px; border: 1px solid var(--background-modifier-border); border-radius: var(--radius-s); overflow: hidden; }
+.task-hours-range-btn { border: none; border-radius: 0; box-shadow: none; background: transparent; padding: 2px 10px; font-size: var(--font-ui-small); color: var(--text-muted); height: auto; }
+.task-hours-range-btn + .task-hours-range-btn { border-left: 1px solid var(--background-modifier-border); }
+.task-hours-range-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
+.task-hours-range-btn.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }

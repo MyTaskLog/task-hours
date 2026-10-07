@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.0.4
+
+- Dashboard: the "next days" tile now covers 14 days by default, and you can switch between 7, 14 and 30 days right above its list. Your choice is remembered.
+
 ## 1.0.3
 
 - New: type `+` in a task to pick an estimate, just like `@` and `!` for dates. `+` alone lists common estimates; `+40` → 40 min, `+2` → 2 h, `+1.5` → 1 h 30 min, `+2h` / `+1h30m` as written. The symbol can be changed in settings.
