@@ -94,3 +94,21 @@
 .task-hours-backlink { color: var(--text-muted); }
 .task-hours-titem .task-hours-edit { vertical-align: middle; margin-left: 4px; }
 .task-hours-input-rec { width: 12em; }
+
+/* ---- query errors: hard to miss ---- */
+.task-hours-qerror {
+  border: 2px solid var(--text-error);
+  border-radius: var(--radius-m);
+  background: rgba(var(--color-red-rgb), 0.12);
+  color: var(--text-normal);
+  padding: 12px 16px;
+  margin: 4px 0;
+  font-family: var(--font-monospace);
+}
+.task-hours-qerror-title { color: var(--text-error); font-weight: 700; font-size: 1.15em; margin-bottom: 6px; font-family: var(--font-interface); }
+.task-hours-qerror-line { font-size: 1.05em; white-space: pre-wrap; }
+
+/* ---- bigger edit button, like Tasks ---- */
+.task-hours-titem .task-hours-edit { margin-left: 6px; padding: 2px; border-radius: var(--radius-s); color: var(--text-muted); }
+.task-hours-titem .task-hours-edit svg { width: 1.15em; height: 1.15em; }
+.task-hours-titem .task-hours-edit:hover { background: var(--background-modifier-hover); color: var(--text-normal); }

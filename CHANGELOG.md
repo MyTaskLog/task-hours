@@ -2,7 +2,8 @@
 
 ## 1.1.0
 
-- New: `task-hours` blocks accept the Tasks plugin's query language — filters for status, dates, priority, recurrence, text, tags and dependencies, boolean combinations, `sort by`, `group by`, `limit`, `hide` / `show`, `explain` and `{{query.file.*}}` placeholders. Results show the estimate total on top and a subtotal for every group.
+- New: `task-hours` blocks accept the Tasks plugin's query language — filters for status, dates (`due`, `starts`, `scheduled`, `created`, `done`, `cancelled`, `happens`, with Tasks' rule that `starts` also matches tasks without a start date), priority, recurrence, text, tags and dependencies, boolean combinations, `sort by`, `group by` (with Tasks' headings, file headings as links), `limit`, `hide` / `show`, `explain` and `{{query.file.*}}` placeholders. `show estimate total` adds the total and group subtotals.
+- Unreadable query lines show a large red error box with the problem line, and the task count reads `1 task` / `3 tasks`, as in Tasks.
 - New filters and options for estimates: `has estimate`, `no estimate`, `estimate above 2h`, `estimate below 30m`, `sort by estimate`, `group by estimate`.
 - Results show the Tasks fields (priority, recurrence, created / scheduled / done / cancelled dates, 🏁, 🆔, ⛔) and the heading the task is under.
 - Tasks-style rows: description, fields inline with full dates, and a `(note > heading)` link that jumps to the task.

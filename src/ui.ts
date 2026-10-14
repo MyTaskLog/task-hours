@@ -368,6 +368,8 @@ export interface ListOptions {
 	tasksMode?: boolean;
 	hide?: Set<string>;
 	show?: Set<string>;
+	/** show the estimate subtotal next to each group heading */
+	subtotals?: boolean;
 }
 
 export function renderTaskList(app: App, el: HTMLElement, tasks: Task[], opt: ListOptions) {
@@ -422,9 +424,20 @@ export function renderQueryGroups(app: App, el: HTMLElement, groups: TGroup[], o
 			if (prev.slice(0, i + 1).join("\u0001") === g.headings.slice(0, i + 1).join("\u0001")) return;
 			const s = sums.get(g.headings.slice(0, i + 1).join("\u0001"))!;
 			const head = el.createDiv({ cls: `task-hours-group task-hours-group-l${Math.min(i + 1, 3)}` });
-			head.createSpan({ text: h });
-			const count = opt.show?.has("group count") ? tr("group.total", { dur: formatDuration(s.min), n: s.n }) : formatDuration(s.min);
-			head.createSpan({ cls: "task-hours-group-total", text: count });
+			const link = g.links[i];
+			if (link) {
+				// filename / backlink / path headings link to the note, as in Tasks
+				const a = head.createEl("a", { cls: "internal-link", text: h });
+				a.addEventListener("click", (e) => {
+					stop(e);
+					const f = app.vault.getAbstractFileByPath(link);
+					if (f instanceof TFile) void app.workspace.getLeaf(false).openFile(f);
+				});
+			} else head.createSpan({ text: h });
+			const parts: string[] = [];
+			if (opt.subtotals) parts.push(formatDuration(s.min));
+			if (opt.show?.has("group count")) parts.push(s.n === 1 ? "1 task" : `${s.n} tasks`);
+			if (parts.length) head.createSpan({ cls: "task-hours-group-total", text: parts.join(" · ") });
 		});
 		prev = g.headings;
 		renderItems(app, el, g.tasks, opt);

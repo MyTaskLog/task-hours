@@ -85,7 +85,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 ## クエリ（Tasks と同じ書き方）
 
-`task-hours` のコードブロックには、[Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) プラグインと同じクエリが書けます。Tasks と違うのは、一番上に**見積時間の合計**、グループごとに**小計**が出ることです。
+`task-hours` のコードブロックには、[Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) プラグインと同じクエリが書けます。`tasks` ブロックで動くクエリは、そのまま `task-hours` でも動きます。違いは、各タスクに見積（⏱️）が表示されることです。
 
 ````markdown
 ```task-hours
@@ -103,7 +103,7 @@ Tasks と同じく保管庫全体が対象です。ブロック名は大文字�
 | | |
 |---|---|
 | 状態 | `done` · `not done` · `status.type is TODO` · `status.name includes …` |
-| 日付 | `due` `start` `scheduled` `created` `done` `cancelled` `happens` ＋ `on` / `before` / `after` / `on or before` / `on or after` / `in` ＋ 日付や期間：`today`、`2026-10-20`、`2026-10-01 2026-10-07`、`next week`、`this month`、`last quarter`、`2026-W42`、`2026-10`、`2026-Q4`、`in two weeks`、`14 days ago`、`next monday` など · `has due date` · `no start date` |
+| 日付 | `due` `starts` `scheduled` `created` `done` `cancelled` `happens` ＋ `on` / `before` / `after` / `on or before` / `on or after` / `in` ＋ 日付や期間：`today`、`2026-10-20`、`2026-10-01 2026-10-07`、`next week`、`this month`、`last quarter`、`2026-W42`、`2026-10`、`2026-Q4`、`in two weeks`、`14 days ago`、`next monday` など · `has due date` · `no start date`。Tasks と同じく、`starts …` には開始日のないタスクも含まれます。除きたいときは `(has start date)` を組み合わせます |
 | 優先度 | `priority is high` · `priority is above medium` · `priority is not none` |
 | 繰り返し | `is recurring` · `is not recurring` · `recurrence includes week` |
 | 文字 | `description` `path` `folder` `filename` `heading` `root` ＋ `includes` / `does not include` / `regex matches /…/` |
@@ -114,10 +114,11 @@ Tasks と同じく保管庫全体が対象です。ブロック名は大文字�
 | 並び順 | `sort by due` `start` `scheduled` `priority` `urgency` `description` `path` `filename` `heading` `tag` `status` `done` `created` `happens` `random`、**`sort by estimate`**（長い順）。`reverse` で逆順 |
 | グループ | `group by due` `start` `scheduled` `happens` `priority` `folder` `filename` `path` `root` `heading` `backlink` `tags` `status` `recurring` `urgency`、**`group by estimate`**。複数行で入れ子にできます |
 | 件数 | `limit 10` · `limit to 10 tasks` · `limit groups 3` |
+| 合計（Task Hours 独自） | `show estimate total` で、一覧の上に見積の合計、グループ見出しに小計を表示 |
 | 表示 | `hide edit button` `hide backlink` `hide task count` `hide priority` `hide start date` `hide due date` `hide scheduled date` `hide created date` `hide done date` `hide recurrence rule` `hide tags` · `show group count`（小計に件数も表示）· `show urgency` · `explain` |
 | 置き換え | `{{query.file.path}}` `{{query.file.folder}}` `{{query.file.filename}}` など（例：`path includes {{query.file.path}}` でこのノートだけ） |
 
-`filter by function` など、JavaScript で条件を書く命令には対応していません。読めない行があると、Tasks と同じく結果の代わりにエラーを表示します。
+`filter by function` など、JavaScript で条件を書く命令には対応していません。読めない行があると、Tasks と同じく結果の代わりに赤い枠のエラーと問題の行を表示します。一番下の件数は Tasks と同じく `1 task` / `3 tasks`（件数を絞ったときは `3 of 10 tasks`）と表示されます。
 
 一覧の見た目は Tasks と同じで、タスク名・各項目のあとに `(ノート名 > 見出し)` のリンクが付きます。押すとそのタスクの行に移動します。
 

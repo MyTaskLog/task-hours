@@ -82,7 +82,7 @@ The folder is remembered, so next time it's one click.
 
 ## Queries (Tasks syntax)
 
-A `task-hours` code block takes the same query language as the [Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) plugin, and adds the **estimate total** on top and a **subtotal for each group**:
+A `task-hours` code block takes the same query language as the [Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) plugin — a query that works in a `tasks` block works here too — and shows the estimates (⏱️) with each task:
 
 ````markdown
 ```task-hours
@@ -100,7 +100,7 @@ Supported instructions:
 | | |
 |---|---|
 | Status | `done` · `not done` · `status.type is TODO` · `status.name includes …` |
-| Dates | `due` `start` `scheduled` `created` `done` `cancelled` `happens` with `on` / `before` / `after` / `on or before` / `on or after` / `in` + a date or range: `today`, `2026-10-20`, `2026-10-01 2026-10-07`, `next week`, `this month`, `last quarter`, `2026-W42`, `2026-10`, `2026-Q4`, `in two weeks`, `14 days ago`, `next monday` … · `has due date` · `no start date` |
+| Dates | `due` `starts` `scheduled` `created` `done` `cancelled` `happens` with `on` / `before` / `after` / `on or before` / `on or after` / `in` + a date or range: `today`, `2026-10-20`, `2026-10-01 2026-10-07`, `next week`, `this month`, `last quarter`, `2026-W42`, `2026-10`, `2026-Q4`, `in two weeks`, `14 days ago`, `next monday` … · `has due date` · `no start date`. As in Tasks, `starts …` also matches tasks with no start date — add `(has start date)` to leave them out |
 | Priority | `priority is high` · `priority is above medium` · `priority is not none` |
 | Recurrence | `is recurring` · `is not recurring` · `recurrence includes week` |
 | Text | `description` `path` `folder` `filename` `heading` `root` + `includes` / `does not include` / `regex matches /…/` |
@@ -111,10 +111,11 @@ Supported instructions:
 | Sort | `sort by due` `start` `scheduled` `priority` `urgency` `description` `path` `filename` `heading` `tag` `status` `done` `created` `happens` `random`, **`sort by estimate`** (longest first) — add `reverse` to flip |
 | Group | `group by due` `start` `scheduled` `happens` `priority` `folder` `filename` `path` `root` `heading` `backlink` `tags` `status` `recurring` `urgency`, **`group by estimate`** — several levels allowed |
 | Limit | `limit 10` · `limit to 10 tasks` · `limit groups 3` |
+| Totals (Task Hours) | `show estimate total` — total estimate above the list and a subtotal on each group heading |
 | Display | `hide edit button` `hide backlink` `hide task count` `hide priority` `hide start date` `hide due date` `hide scheduled date` `hide created date` `hide done date` `hide recurrence rule` `hide tags` · `show group count` · `show urgency` · `explain` |
 | Placeholders | `{{query.file.path}}` `{{query.file.folder}}` `{{query.file.filename}}` … (for example `path includes {{query.file.path}}` for this note only) |
 
-Not supported: `filter by function`, `sort by function`, `group by function` (custom JavaScript). If a query has a line Task Hours can't read, it shows the error instead of results, like Tasks.
+Not supported: `filter by function`, `sort by function`, `group by function` (custom JavaScript). If a query has a line Task Hours can't read, it shows a red error box with the problem line instead of results, like Tasks. The task count at the bottom reads `1 task` / `3 tasks` (or `3 of 10 tasks` with a limit).
 
 Each task is shown like in Tasks: the description, its fields, and a link to the note it's in — `(note > heading)` — that jumps to the task.
 

@@ -136,7 +136,6 @@ function shift(d: Date, n: number, unit: string): Date {
 // ---------- tasks helpers ----------
 
 type DateField = "due" | "start" | "scheduled" | "created" | "done" | "cancelled" | "happens";
-const DATE_FIELDS = ["due", "start", "scheduled", "created", "done", "cancelled", "happens"];
 
 function datesOf(t: Task, f: DateField): string[] {
 	const pick = (v: string | null) => (v ? [v] : []);
@@ -242,8 +241,10 @@ export function parseFilter(line: string): Pred | string {
 		return (t) => (datesOf(t, f).length > 0) === has;
 	}
 	if ((m = low.match(/^(due|start|scheduled|created|done|cancelled|happens) date is invalid$/))) return () => false;
-	if ((m = l.match(/^(due|start|scheduled|created|done|cancelled|happens)\s+(.*)$/i)) && DATE_FIELDS.includes(m[1].toLowerCase())) {
-		const f = m[1].toLowerCase() as DateField;
+	// Comparisons use Tasks' keywords: due, starts, scheduled, created, done, cancelled, happens
+	if ((m = l.match(/^(due|starts|scheduled|created|done|cancelled|happens)\s+(.*)$/i))) {
+		const kw = m[1].toLowerCase();
+		const f = (kw === "starts" ? "start" : kw) as DateField;
 		let rest = m[2].trim();
 		let op = "on";
 		const opm = rest.match(/^(on or before|on or after|in or before|in or after|before|after|on|in)\s+(.*)$/i);
@@ -256,6 +257,8 @@ export function parseFilter(line: string): Pred | string {
 		// resolve "today" etc. at match time so long-open notes stay correct
 		return (t, c) => {
 			const r = resolveDateExpr(rest, c.now) ?? range;
+			// Like Tasks: "starts …" also matches tasks that have no start date
+			if (f === "start" && !t.startDate) return true;
 			return datesOf(t, f).some((d) => {
 				switch (op) {
 					case "before":
@@ -377,7 +380,7 @@ export function parseFilter(line: string): Pred | string {
 	}
 
 	if (/^filter by function\b/i.test(l)) return "Not supported in Task Hours: filter by function";
-	return `Unknown instruction: ${l}`;
+	return `Problem line: "${l}"`;
 }
 
 // ---------- boolean combinations: (a) AND (b) OR NOT (c) ----------
@@ -563,14 +566,14 @@ export function parseTQuery(source: string, file: QueryFileInfo): TQuery {
 			}
 			if (key.startsWith("function")) q.errors.push("Not supported in Task Hours: sort by function");
 			else if ((SORT_KEYS as string[]).includes(key)) q.sorts.push({ key: key as SortKey, reverse: !!m[2], tagIndex });
-			else q.errors.push(`Unknown sort: ${line}`);
+			else q.errors.push(`Problem line: "${line}"`);
 			continue;
 		}
 		if ((m = low.match(/^group by (.+?)( reverse)?$/))) {
 			const key = m[1];
 			if (key.startsWith("function")) q.errors.push("Not supported in Task Hours: group by function");
 			else if ((GROUP_KEYS as string[]).includes(key)) q.groups.push({ key: key as GroupKey, reverse: !!m[2] });
-			else q.errors.push(`Unknown group: ${line}`);
+			else q.errors.push(`Problem line: "${line}"`);
 			continue;
 		}
 		if ((m = low.match(/^limit groups (?:to )?(\d+)(?: tasks?)?$/))) {
@@ -592,7 +595,7 @@ export function parseTQuery(source: string, file: QueryFileInfo): TQuery {
 			continue;
 		}
 		const pred = /^\(|^NOT \(/.test(line) ? parseBoolean(line) : parseFilter(line);
-		if (typeof pred === "string") q.errors.push(pred);
+		if (typeof pred === "string") q.errors.push(pred.startsWith("Problem line") ? pred : `${pred}\nProblem line: "${line}"`);
 		else q.filters.push({ text: line, pred });
 	}
 	return q;
@@ -602,10 +605,12 @@ export function parseTQuery(source: string, file: QueryFileInfo): TQuery {
 
 export interface TGroup {
 	headings: string[]; // one per "group by" level
+	links: (string | null)[]; // per level: note path when the heading is a link (filename, backlink, path)
 	tasks: Task[];
 }
 
-const NO = "￿"; // sorts "no date" last
+const NO = "\uFFFF"; // sorts "no date" last
+const SORT_SEP = "\u0002"; // "<sort key>\u0002<label>": sort by the key, show the label
 
 function sortValue(t: Task, key: SortKey, tagIndex: number, now: Date): string | number {
 	switch (key) {
@@ -691,9 +696,10 @@ function groupValues(t: Task, key: GroupKey, now: Date, formatMinutes: (m: numbe
 		case "happens":
 			return [dateHeading(datesOf(t, "happens").sort()[0], "happens")];
 		case "priority": {
+			// Tasks' wording ("High priority"), ordered highest first via a hidden sort prefix
 			const i = PRIORITY_ORDER.indexOf(t.priority);
 			const label = t.priority === "none" ? "Normal" : t.priority[0].toUpperCase() + t.priority.slice(1);
-			return [`Priority ${i}: ${label}`];
+			return [`${i}${SORT_SEP}${label} priority`];
 		}
 		case "urgency":
 			return [`${urgency(t, now).toFixed(2)}`];
@@ -743,7 +749,7 @@ export function runTQuery(q: TQuery, all: Task[], now: Date, formatMinutes: (m: 
 	});
 	const limited = q.limit !== undefined ? tasks.slice(0, q.limit) : tasks;
 
-	if (!q.groups.length) return { tasks, groups: [{ headings: [], tasks: limited }], shown: limited.length };
+	if (!q.groups.length) return { tasks, groups: [{ headings: [], links: [], tasks: limited }], shown: limited.length };
 
 	const map = new Map<string, TGroup>();
 	for (const t of limited) {
@@ -754,7 +760,12 @@ export function runTQuery(q: TQuery, all: Task[], now: Date, formatMinutes: (m: 
 		}
 		for (const p of paths) {
 			const k = p.join("\u0001");
-			if (!map.has(k)) map.set(k, { headings: p, tasks: [] });
+			if (!map.has(k))
+				map.set(k, {
+					headings: p,
+					links: q.groups.map((g) => (["filename", "backlink", "path"].includes(g.key) ? t.path : null)),
+					tasks: [],
+				});
 			map.get(k)!.tasks.push(t);
 		}
 	}
@@ -766,7 +777,7 @@ export function runTQuery(q: TQuery, all: Task[], now: Date, formatMinutes: (m: 
 		return 0;
 	});
 	for (const g of groups) {
-		g.headings = g.headings.map((h) => h.replace(NO, ""));
+		g.headings = g.headings.map((h) => h.replace(NO, "").replace(new RegExp(`^.*${SORT_SEP}`), ""));
 		if (q.groupLimit !== undefined) g.tasks = g.tasks.slice(0, q.groupLimit);
 	}
 	return { tasks, groups, shown: groups.reduce((n, g) => n + g.tasks.length, 0) };

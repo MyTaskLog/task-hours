@@ -273,9 +273,10 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		el.removeClass("task-hours");
 		el.addClass("task-hours-query");
 		if (q.errors.length) {
-			const err = el.createDiv({ cls: "task-hours-error" });
-			err.createDiv({ cls: "task-hours-error-title", text: tr("q.errorTitle") });
-			q.errors.forEach((e) => err.createDiv({ text: "⚠ " + e }));
+			// Big and red, so a mistyped query is noticed straight away
+			const err = el.createDiv({ cls: "task-hours-qerror", attr: { role: "alert" } });
+			err.createDiv({ cls: "task-hours-qerror-title", text: "⚠ Task Hours query: do not understand query" });
+			for (const e of q.errors) for (const line of e.split("\n")) err.createDiv({ cls: "task-hours-qerror-line", text: line });
 			return;
 		}
 		if (q.explain) {
@@ -286,14 +287,19 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		const all = await collectTasks(this.app, this.app.vault.getMarkdownFiles(), parseTasks);
 		const res = runTQuery(q, all, new Date(), formatDuration);
 
-		// Total estimate on top (what Task Hours adds); task count at the bottom, like Tasks
-		const head = el.createDiv({ cls: "task-hours-qtotal" });
-		head.createSpan({ cls: "task-hours-qtotal-value", text: `⏱️ ${formatDuration(totalMinutes(res.tasks))}` });
-		const noEst = res.tasks.filter((t) => t.minutes === null).length;
-		if (noEst && !q.hide.has("estimate")) head.createSpan({ cls: "task-hours-warn", text: tr("sum.noEstimate", { n: noEst }) });
-		if (res.tasks.length) renderQueryGroups(this.app, el, res.groups, { group: "none", showFile: true, tasksMode: true, hide: q.hide, show: q.show });
+		// The estimate total is opt-in ("show estimate total"); the task count sits at the bottom, like Tasks
+		const showTotal = q.show.has("estimate total");
+		if (showTotal) {
+			const head = el.createDiv({ cls: "task-hours-qtotal" });
+			head.createSpan({ cls: "task-hours-qtotal-value", text: `⏱️ ${formatDuration(totalMinutes(res.tasks))}` });
+		}
+		if (res.tasks.length)
+			renderQueryGroups(this.app, el, res.groups, { group: "none", showFile: true, tasksMode: true, hide: q.hide, show: q.show, subtotals: showTotal });
 		if (!q.hide.has("task count")) {
-			const text = res.shown < res.tasks.length ? tr("q.shown", { shown: res.shown, n: res.tasks.length }) : res.tasks.length === 1 ? tr("q.task1") : tr("q.tasks", { n: res.tasks.length });
+			// Always English with a proper plural, as in Tasks: "1 task", "3 tasks", "3 of 10 tasks"
+			const n = res.tasks.length;
+			const noun = n === 1 ? "task" : "tasks";
+			const text = res.shown < n ? `${res.shown} of ${n} ${noun}` : `${n} ${noun}`;
 			el.createDiv({ cls: "task-hours-qcount", text });
 		}
 	}
