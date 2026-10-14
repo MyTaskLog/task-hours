@@ -1,9 +1,23 @@
 // Task list rendering and editing from the list (done, start, due, estimate)
 
-import { App, MarkdownView, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
+import { App, MarkdownView, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import { headerDate, labelDate } from "./dates";
 import { t as tr } from "./i18n";
-import { Field, PRIORITY_EMOJI, Task, estimateText, fmt, formatDuration, parseDuration, setLineField, totalMinutes } from "./parse";
+import {
+	Field,
+	PRIORITY_EMOJI,
+	PRIORITY_ORDER,
+	Priority,
+	Task,
+	TasksField,
+	estimateText,
+	fmt,
+	formatDuration,
+	parseDuration,
+	replaceTasksField,
+	setLineField,
+	totalMinutes,
+} from "./parse";
 import { TGroup, filenameOf, urgency } from "./tquery";
 
 export type GroupBy = "none" | "start" | "due" | "file";
@@ -45,10 +59,20 @@ export function setField(app: App, t: Task, field: Field, value: string | null) 
 	return rewrite(app, t, (l) => setLineField(l, field, value));
 }
 
+export function setTasksField(app: App, t: Task, field: TasksField, value: string | null) {
+	return rewrite(app, t, (l) => replaceTasksField(l, field, value));
+}
+
 /** Set several fields in one write (used by the edit dialog) */
-export function setFields(app: App, t: Task, values: Partial<Record<Field, string | null>>) {
+export function setFields(
+	app: App,
+	t: Task,
+	values: Partial<Record<Field, string | null>>,
+	tasksValues: Partial<Record<TasksField, string | null>> = {}
+) {
 	return rewrite(app, t, (l) => {
 		for (const f of ["estimate", "start", "due"] as Field[]) if (f in values) l = setLineField(l, f, values[f] ?? null);
+		for (const [f, v] of Object.entries(tasksValues) as [TasksField, string | null][]) l = replaceTasksField(l, f, v);
 		return l;
 	});
 }
@@ -58,6 +82,8 @@ export class EditTaskModal extends Modal {
 	private estimate: string;
 	private start: string;
 	private due: string;
+	// Fields Tasks added — editable only when the task already has them
+	private extra: Partial<Record<TasksField, string>> = {};
 
 	constructor(
 		app: App,
@@ -67,6 +93,12 @@ export class EditTaskModal extends Modal {
 		this.estimate = task.minutes === null ? "" : (estimateText(task.raw) ?? "");
 		this.start = task.startDate ?? "";
 		this.due = task.due ?? "";
+		if (task.scheduled) this.extra.scheduled = task.scheduled;
+		if (task.created) this.extra.created = task.created;
+		if (task.doneDate) this.extra.done = task.doneDate;
+		if (task.cancelled) this.extra.cancelled = task.cancelled;
+		if (task.priority !== "none") this.extra.priority = task.priority;
+		if (task.recurrence) this.extra.recurrence = task.recurrence;
 	}
 
 	onOpen() {
@@ -88,6 +120,30 @@ export class EditTaskModal extends Modal {
 			t.inputEl.type = "date";
 			t.setValue(this.due).onChange((v) => (this.due = v));
 		});
+		const dates: [TasksField, string][] = [
+			["scheduled", "⏳ " + tr("edit.scheduled")],
+			["created", "➕ " + tr("edit.created")],
+			["done", "✅ " + tr("edit.done")],
+			["cancelled", "❌ " + tr("edit.cancelled")],
+		];
+		for (const [f, label] of dates) {
+			if (this.extra[f] === undefined) continue;
+			new Setting(contentEl).setName(label).addText((t) => {
+				t.inputEl.type = "date";
+				t.setValue(this.extra[f] ?? "").onChange((v) => (this.extra[f] = v));
+			});
+		}
+		if (this.extra.priority !== undefined) {
+			new Setting(contentEl).setName(tr("edit.priority")).addDropdown((d) => {
+				for (const p of PRIORITY_ORDER) d.addOption(p, priorityLabel(p));
+				d.setValue(this.extra.priority ?? "none").onChange((v) => (this.extra.priority = v));
+			});
+		}
+		if (this.extra.recurrence !== undefined) {
+			new Setting(contentEl).setName("🔁 " + tr("edit.recurrence")).addText((t) =>
+				t.setValue(this.extra.recurrence ?? "").onChange((v) => (this.extra.recurrence = v))
+			);
+		}
 		new Setting(contentEl)
 			.addButton((b) => b.setButtonText(tr("edit.cancel")).onClick(() => this.close()))
 			.addButton((b) =>
@@ -114,7 +170,9 @@ export class EditTaskModal extends Modal {
 			new Notice(tr("add.startAfterDue"));
 			return;
 		}
-		await setFields(this.app, this.task, { estimate: est || null, start: this.start || null, due: this.due || null });
+		const extra: Partial<Record<TasksField, string | null>> = {};
+		for (const [f, v] of Object.entries(this.extra) as [TasksField, string][]) extra[f] = v.trim() && v !== "none" ? v.trim() : null;
+		await setFields(this.app, this.task, { estimate: est || null, start: this.start || null, due: this.due || null }, extra);
 		this.close();
 	}
 
@@ -151,10 +209,17 @@ function stop(e: Event) {
 	e.stopPropagation();
 }
 
-function dateChip(parent: HTMLElement, icon: string, value: string | null, cls: string, onSet: (v: string | null) => void) {
+function dateChip(
+	parent: HTMLElement,
+	icon: string,
+	value: string | null,
+	cls: string,
+	onSet: (v: string | null) => void,
+	fullDate = false
+) {
 	const chip = parent.createSpan({
 		cls: "task-hours-chip " + cls + (value ? "" : " is-empty"),
-		text: value ? `${icon} ${labelDate(value)}` : `${icon} +`,
+		text: value ? `${icon} ${fullDate ? value : labelDate(value)}` : `${icon} +`,
 		attr: { "aria-label": tr("list.clickToChange"), tabindex: "0" },
 	});
 	const edit = (e: Event) => {
@@ -187,6 +252,61 @@ function dateChip(parent: HTMLElement, icon: string, value: string | null, cls: 
 	};
 	chip.addEventListener("click", edit);
 	chip.addEventListener("keydown", (e) => e.key === "Enter" && edit(e));
+}
+
+export function priorityLabel(p: Priority): string {
+	return `${PRIORITY_EMOJI[p] || "—"} ${tr(`prio.${p}`)}`;
+}
+
+/** Priority that Tasks set: click to pick another one (or remove it) */
+function priorityChip(app: App, parent: HTMLElement, t: Task) {
+	const chip = parent.createSpan({
+		cls: "task-hours-chip task-hours-prio",
+		text: PRIORITY_EMOJI[t.priority],
+		attr: { "aria-label": priorityLabel(t.priority), tabindex: "0" },
+	});
+	chip.addEventListener("click", (e) => {
+		stop(e);
+		const menu = new Menu();
+		for (const p of PRIORITY_ORDER)
+			menu.addItem((i) =>
+				i
+					.setTitle(priorityLabel(p))
+					.setChecked(p === t.priority)
+					.onClick(() => void setTasksField(app, t, "priority", p === "none" ? null : p))
+			);
+		menu.showAtMouseEvent(e);
+	});
+}
+
+/** Recurrence rule that Tasks set: click to edit the text (empty removes it) */
+function recurrenceChip(app: App, parent: HTMLElement, t: Task) {
+	const chip = parent.createSpan({
+		cls: "task-hours-chip",
+		text: `🔁 ${t.recurrence}`,
+		attr: { "aria-label": tr("list.clickToChange"), tabindex: "0" },
+	});
+	chip.addEventListener("click", (e) => {
+		stop(e);
+		const input = createEl("input", { type: "text", cls: "task-hours-input task-hours-input-rec" });
+		input.value = t.recurrence ?? "";
+		chip.replaceWith(input);
+		input.focus();
+		let done = false;
+		const finish = (commit: boolean) => {
+			if (done) return;
+			done = true;
+			input.replaceWith(chip);
+			const v = input.value.trim();
+			if (commit && v !== t.recurrence) void setTasksField(app, t, "recurrence", v || null);
+		};
+		input.addEventListener("keydown", (ev) => {
+			if (ev.key === "Enter" && !ev.isComposing) finish(true);
+			if (ev.key === "Escape") finish(false);
+		});
+		input.addEventListener("blur", () => finish(true));
+		input.addEventListener("click", stop);
+	});
 }
 
 function estimateChip(parent: HTMLElement, t: Task, onSet: (v: string | null) => void) {
@@ -311,10 +431,80 @@ export function renderQueryGroups(app: App, el: HTMLElement, groups: TGroup[], o
 	}
 }
 
+/** One task in the style of the Tasks plugin: description, fields inline, (backlink), ✏️ */
+function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptions, today: string) {
+	const hide = opt.hide ?? new Set<string>();
+	const li = ul.createEl("li", { cls: "task-hours-titem" });
+	if (t.done) li.addClass("is-done");
+	const cb = li.createEl("input", { type: "checkbox", cls: "task-list-item-checkbox" });
+	cb.checked = t.done;
+	cb.addEventListener("click", (e) => {
+		stop(e);
+		void toggleDone(app, t);
+	});
+	li.createSpan({ cls: "task-hours-tdesc", text: t.name + " " });
+	const f = li.createSpan({ cls: "task-hours-tfields" });
+	const date = (emoji: string, value: string | null, key: string, field: TasksField) => {
+		if (value && !hide.has(key)) dateChip(f, emoji, value, "", (v) => void setTasksField(app, t, field, v), true);
+	};
+	if (!hide.has("estimate")) estimateChip(f, t, (v) => void setField(app, t, "estimate", v));
+	if (t.priority !== "none" && !hide.has("priority")) priorityChip(app, f, t);
+	if (t.recurrence && !hide.has("recurrence rule")) recurrenceChip(app, f, t);
+	date("➕", t.created, "created date", "created");
+	// empty start / due aren't shown here (like Tasks) — add them with ✏️
+	if (t.startDate && !hide.has("start date"))
+		dateChip(f, "🛫", t.startDate, "task-hours-start", (v) => void setField(app, t, "start", v), true);
+	date("⏳", t.scheduled, "scheduled date", "scheduled");
+	if (t.due && !hide.has("due date"))
+		dateChip(
+			f,
+			"📅",
+			t.due,
+			"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
+			(v) => void setField(app, t, "due", v),
+			true
+		);
+	date("❌", t.cancelled, "cancelled date", "cancelled");
+	date("✅", t.doneDate, "done date", "done");
+	const ro = (text: string | null, key: string) => {
+		if (text && !hide.has(key)) f.createSpan({ cls: "task-hours-ro", text });
+	};
+	ro(t.onCompletion && `🏁 ${t.onCompletion}`, "on completion");
+	ro(t.id && `🆔 ${t.id}`, "id");
+	ro(t.dependsOn.length ? `⛔ ${t.dependsOn.join(",")}` : null, "depends on");
+	if (opt.show?.has("urgency")) ro(`⚡ ${urgency(t, new Date()).toFixed(2)}`, "urgency");
+	if (!hide.has("backlink")) {
+		const file = filenameOf(t.path).replace(/\.md$/, "");
+		const wrap = li.createSpan({ cls: "task-hours-backlink" });
+		wrap.appendText(" (");
+		const a = wrap.createEl("a", { cls: "internal-link", text: t.heading ? `${file} > ${t.heading}` : file });
+		a.addEventListener("click", (e) => {
+			stop(e);
+			void openTask(app, t);
+		});
+		wrap.appendText(")");
+	}
+	if (!hide.has("edit button")) {
+		const pen = li.createSpan({ cls: "task-hours-edit clickable-icon", attr: { "aria-label": tr("edit.title"), tabindex: "0" } });
+		setIcon(pen, "pencil");
+		const open = (e: Event) => {
+			stop(e);
+			new EditTaskModal(app, t).open();
+		};
+		pen.addEventListener("click", open);
+		pen.addEventListener("keydown", (e) => e.key === "Enter" && open(e));
+	}
+}
+
 function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOptions) {
 	const today = fmt(new Date());
 	const hide = opt.hide ?? new Set<string>();
 	const tm = !!opt.tasksMode;
+	if (tm) {
+		const ul = parent.createEl("ul", { cls: "task-hours-tlist contains-task-list" });
+		for (const t of tasks) renderTasksStyleItem(app, ul, t, opt, today);
+		return;
+	}
 	const ul = parent.createEl("ul", { cls: "task-hours-list" });
 	for (const t of tasks) {
 		const li = ul.createEl("li", { cls: "task-hours-item" });

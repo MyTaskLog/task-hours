@@ -270,7 +270,8 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		const el = this.containerEl;
 		const q = parseTQuery(this.source, { path: this.ctx.sourcePath });
 		el.empty();
-		el.addClass("task-hours");
+		el.removeClass("task-hours");
+		el.addClass("task-hours-query");
 		if (q.errors.length) {
 			const err = el.createDiv({ cls: "task-hours-error" });
 			err.createDiv({ cls: "task-hours-error-title", text: tr("q.errorTitle") });
@@ -285,19 +286,16 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		const all = await collectTasks(this.app, this.app.vault.getMarkdownFiles(), parseTasks);
 		const res = runTQuery(q, all, new Date(), formatDuration);
 
-		const head = el.createDiv({ cls: "task-hours-summary" });
-		head.createSpan({ cls: "task-hours-total", text: `⏱️ ${formatDuration(totalMinutes(res.tasks))}` });
-		if (!q.hide.has("task count")) {
-			const text = res.shown < res.tasks.length ? tr("q.shown", { shown: res.shown, n: res.tasks.length }) : tr("q.tasks", { n: res.tasks.length });
-			head.createSpan({ cls: "task-hours-meta", text });
-		}
+		// Total estimate on top (what Task Hours adds); task count at the bottom, like Tasks
+		const head = el.createDiv({ cls: "task-hours-qtotal" });
+		head.createSpan({ cls: "task-hours-qtotal-value", text: `⏱️ ${formatDuration(totalMinutes(res.tasks))}` });
 		const noEst = res.tasks.filter((t) => t.minutes === null).length;
 		if (noEst && !q.hide.has("estimate")) head.createSpan({ cls: "task-hours-warn", text: tr("sum.noEstimate", { n: noEst }) });
-		if (!res.tasks.length) {
-			el.createDiv({ cls: "task-hours-empty", text: tr("sum.empty") });
-			return;
+		if (res.tasks.length) renderQueryGroups(this.app, el, res.groups, { group: "none", showFile: true, tasksMode: true, hide: q.hide, show: q.show });
+		if (!q.hide.has("task count")) {
+			const text = res.shown < res.tasks.length ? tr("q.shown", { shown: res.shown, n: res.tasks.length }) : res.tasks.length === 1 ? tr("q.task1") : tr("q.tasks", { n: res.tasks.length });
+			el.createDiv({ cls: "task-hours-qcount", text });
 		}
-		renderQueryGroups(this.app, el, res.groups, { group: "none", showFile: true, tasksMode: true, hide: q.hide, show: q.show });
 	}
 
 	/** The original "key: value" syntax */

@@ -78,3 +78,19 @@
 .task-hours-error-title { font-weight: 600; margin-bottom: 2px; }
 .task-hours-explain { font-size: var(--font-ui-small); color: var(--text-muted); border-left: 2px solid var(--background-modifier-border); padding-left: 8px; margin-bottom: 8px; }
 .task-hours-edit-name { color: var(--text-muted); margin-bottom: 8px; }
+
+/* ---- Tasks-style rows (task-hours blocks in Tasks syntax) ---- */
+.task-hours-query .task-hours-qtotal { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin-bottom: 4px; }
+.task-hours-qtotal-value { font-weight: 600; }
+.task-hours-qcount { margin-top: 6px; color: var(--text-muted); }
+.task-hours-tlist { list-style: none; padding-left: 0; margin: 4px 0; }
+.task-hours-titem { padding: 2px 0; line-height: var(--line-height-normal); }
+.task-hours-titem > .task-list-item-checkbox { margin-right: 6px; vertical-align: middle; }
+.task-hours-titem.is-done .task-hours-tdesc { text-decoration: line-through; color: var(--text-faint); }
+.task-hours-tfields > * { margin-right: 6px; }
+.task-hours-tfields .task-hours-chip { padding: 0 2px; color: var(--text-normal); }
+.task-hours-tfields .task-hours-est.is-missing { color: var(--text-warning); }
+.task-hours-tfields .is-overdue { color: var(--text-error); }
+.task-hours-backlink { color: var(--text-muted); }
+.task-hours-titem .task-hours-edit { vertical-align: middle; margin-left: 4px; }
+.task-hours-input-rec { width: 12em; }

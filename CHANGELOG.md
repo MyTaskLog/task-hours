@@ -5,7 +5,9 @@
 - New: `task-hours` blocks accept the Tasks plugin's query language — filters for status, dates, priority, recurrence, text, tags and dependencies, boolean combinations, `sort by`, `group by`, `limit`, `hide` / `show`, `explain` and `{{query.file.*}}` placeholders. Results show the estimate total on top and a subtotal for every group.
 - New filters and options for estimates: `has estimate`, `no estimate`, `estimate above 2h`, `estimate below 30m`, `sort by estimate`, `group by estimate`.
 - Results show the Tasks fields (priority, recurrence, created / scheduled / done / cancelled dates, 🏁, 🆔, ⛔) and the heading the task is under.
-- ✏️ pencil button on every task to edit its estimate, start date and due date together.
+- Tasks-style rows: description, fields inline with full dates, and a `(note > heading)` link that jumps to the task.
+- Everything shown can be edited in place: estimate, start and due (which Task Hours can also add), plus scheduled / created / done / cancelled dates, priority and recurrence when the task already has them.
+- ✏️ pencil button on every task opens all of its editable fields at once.
 - The block name works in any case (`task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`).
 - Fix: the Tasks fields 🏁 (on completion), 🆔 and ⛔ were shown as part of the task name.
 - Blocks in the older `key: value` syntax keep working as before.

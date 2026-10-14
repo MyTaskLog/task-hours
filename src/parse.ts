@@ -463,6 +463,40 @@ export function setLineField(line: string, field: Field, value: string | null): 
 	return tidy(line.slice(0, offset) + nb);
 }
 
+// ---------- Editing fields that Tasks added (change or remove only, never add) ----------
+
+export type TasksField = "scheduled" | "created" | "done" | "cancelled" | "priority" | "recurrence";
+
+const TASKS_DATE_EMOJI: Record<"scheduled" | "created" | "done" | "cancelled", string> = {
+	scheduled: "⏳",
+	created: "➕",
+	done: "✅",
+	cancelled: "❌",
+};
+
+/**
+ * Change or remove a Tasks field that the line already has.
+ * Returns the line unchanged when the field isn't there — Task Hours only adds
+ * the estimate, start date and due date.
+ */
+export function replaceTasksField(line: string, field: TasksField, value: string | null): string {
+	if (field === "priority") {
+		const re = /[🔺⏫🔼🔽⏬]\uFE0F?/u;
+		if (!re.test(line)) return line;
+		const emoji = value ? PRIORITY_EMOJI[value as Priority] ?? "" : "";
+		return tidy(line.replace(re, emoji));
+	}
+	if (field === "recurrence") {
+		const re = new RegExp("🔁\\uFE0F?\\s*[^" + FIELD_START + "^]*", "u");
+		if (!re.test(line)) return line;
+		const trimmed = value?.trim();
+		return tidy(line.replace(re, trimmed ? `🔁 ${trimmed} ` : ""));
+	}
+	const re = new RegExp(TASKS_DATE_EMOJI[field] + "\\uFE0F?\\s*\\d{4}-\\d{2}-\\d{2}", "u");
+	if (!re.test(line)) return line;
+	return tidy(line.replace(re, value ? `${TASKS_DATE_EMOJI[field]} ${value}` : ""));
+}
+
 /** Build a task line (Tasks-compatible order: ⏱️ goes before the dates) */
 export function buildTaskLine(name: string, estimate: string, start: string, due: string): string {
 	let s = `- [ ] ${name.trim()}`;

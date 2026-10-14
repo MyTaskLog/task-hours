@@ -116,7 +116,9 @@ Supported instructions:
 
 Not supported: `filter by function`, `sort by function`, `group by function` (custom JavaScript). If a query has a line Task Hours can't read, it shows the error instead of results, like Tasks.
 
-The results show the Tasks fields (priority, recurrence, created / scheduled / done dates, tags) as well. You can change the estimate, start date and due date — click the ⏱️ / 🛫 / 📅 value, or the ✏️ pencil to edit all three at once. Other fields are edited with Tasks or in the note itself.
+Each task is shown like in Tasks: the description, its fields, and a link to the note it's in — `(note > heading)` — that jumps to the task.
+
+Everything shown can be changed right there: click ⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ to pick a new date (or estimate), click the priority to choose another, click 🔁 to edit the recurrence rule. The ✏️ pencil opens all of them at once. Task Hours can **add** only the estimate, start date and due date; the other fields can be changed or removed when the task already has them (add them with Tasks).
 
 ### Older syntax
 
