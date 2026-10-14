@@ -17,11 +17,12 @@ import {
 } from "obsidian";
 import { DASHBOARD_VIEW, DashboardView, RANGE_DAYS, RangeDays } from "./dashboard";
 import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
+import { EstimatePicker } from "./estimate";
 import { Lang, setLang, t as tr } from "./i18n";
-import { Query, buildTaskLine, filterTasks, formatDuration, parseDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
+import { Query, buildTaskLine, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
 import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
-import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList } from "./ui";
+import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList, setUiApp } from "./ui";
 
 const BLOCK = "task-hours";
 const BLOCK_NAMES = ["task-hours", "Task-Hours", "Task-hours", "TASK-HOURS", "taskhours", "TaskHours", "Taskhours", "TASKHOURS", "task_hours"];
@@ -54,6 +55,7 @@ export default class TaskHoursPlugin extends Plugin {
 
 	async onload() {
 		await this.loadSettings();
+		setUiApp(this.app);
 		const l = this.settings.language;
 		setLang(l === "auto" ? (getLanguage().startsWith("ja") ? "ja" : "en") : l);
 
@@ -160,7 +162,7 @@ function insertSummaryAtTop(app: App, editor: Editor, file: TFile) {
 
 class AddTaskModal extends Modal {
 	private name = "";
-	private estimate = "";
+	private picker!: EstimatePicker;
 	private start = "";
 	private due = "";
 
@@ -176,10 +178,9 @@ class AddTaskModal extends Modal {
 			t.setPlaceholder(tr("add.namePh")).onChange((v) => (this.name = v));
 			window.setTimeout(() => t.inputEl.focus(), 0);
 		});
-		new Setting(contentEl)
-			.setName(tr("add.estimate"))
-			.setDesc(tr("add.estimateDesc"))
-			.addText((t) => t.setPlaceholder(tr("add.estimatePh")).onChange((v) => (this.estimate = v)));
+		const estRow = new Setting(contentEl).setName(tr("add.estimate"));
+		estRow.settingEl.addClass("task-hours-estrow");
+		this.picker = new EstimatePicker(estRow.controlEl, null, { onEnter: () => this.submit() });
 		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
 			t.inputEl.type = "date";
 			t.onChange((v) => (this.start = v));
@@ -208,7 +209,8 @@ class AddTaskModal extends Modal {
 			new Notice(tr("add.needName"));
 			return;
 		}
-		if (this.estimate.trim() && parseDuration(this.estimate) === null) {
+		const estimate = this.picker.value;
+		if (estimate === undefined) {
 			new Notice(tr("add.badEstimate"));
 			return;
 		}
@@ -216,7 +218,7 @@ class AddTaskModal extends Modal {
 			new Notice(tr("add.startAfterDue"));
 			return;
 		}
-		this.onSubmit(buildTaskLine(this.name, this.estimate, this.start, this.due));
+		this.onSubmit(buildTaskLine(this.name, estimate ?? "", this.start, this.due));
 		this.close();
 	}
 

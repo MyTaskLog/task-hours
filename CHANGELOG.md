@@ -2,6 +2,7 @@
 
 ## 1.1.0
 
+- Estimates are now edited with a number plus an **h / min** switch, a preview and quick picks — from a ⏱️ click, the ✏️ dialog and the add-task form. A plain `50` is no longer saved as 50 h: like `+`, 10 or more is taken as minutes, and you can switch the unit.
 - New: `task-hours` blocks accept the Tasks plugin's query language — filters for status, dates (`due`, `starts`, `scheduled`, `created`, `done`, `cancelled`, `happens`, with Tasks' rule that `starts` also matches tasks without a start date), priority, recurrence, text, tags and dependencies, boolean combinations, `sort by`, `group by` (with Tasks' headings, file headings as links), `limit`, `hide` / `show`, `explain` and `{{query.file.*}}` placeholders. `show estimate total` adds the total and group subtotals.
 - Unreadable query lines show a large red error box with the problem line, and the task count reads `1 task` / `3 tasks`, as in Tasks.
 - New filters and options for estimates: `has estimate`, `no estimate`, `estimate above 2h`, `estimate below 30m`, `sort by estimate`, `group by estimate`.

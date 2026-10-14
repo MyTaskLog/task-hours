@@ -76,7 +76,7 @@ The folder is remembered, so next time it's one click.
 ### Edit right from the list
 
 - Click **🛫 start** or **📅 due** to pick a new date. The task line in the note is updated.
-- Click **⏱️** to type a new estimate and press Enter.
+- Click **⏱️** to change the estimate: type a number, choose **h** or **min** (a number of 10 or more is assumed to be minutes, as with `+`), or click one of the quick picks.
 - Use the checkbox to complete or reopen a task.
 - Click a task name to jump to it in its note.
 
@@ -146,7 +146,7 @@ show: summary
 
 - `[x]`, `[X]` and `[-]` (cancelled) count as done. `[/]` and other statuses count as open.
 - The start date is 🛫. If a task has no 🛫 but has ⏳ (Tasks' scheduled date), that is used instead.
-- Estimate units: `h` `hr` `hrs` `hour(s)` `m` `min` `mins` `minute(s)`, also `時間` `分`. A bare number means hours.
+- Estimate units: `h` `hr` `hrs` `hour(s)` `m` `min` `mins` `minute(s)`, also `時間` `分`. A bare number written directly after ⏱️ in a note means hours; in the estimate editor you choose h or min.
 - When used with Tasks, ⏱️ must come before 🛫 and 📅. Quick entry, the form, and list edits all place it there for you.
 - The interface follows Obsidian's language (English or Japanese). You can override it in settings.
 

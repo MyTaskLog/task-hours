@@ -10,15 +10,25 @@ import {
 	Priority,
 	Task,
 	TasksField,
-	estimateText,
 	fmt,
 	formatDuration,
-	parseDuration,
 	replaceTasksField,
 	setLineField,
 	totalMinutes,
 } from "./parse";
+import { EstimateModal, EstimatePicker } from "./estimate";
+import { durationValue } from "./shorthand";
 import { TGroup, filenameOf, urgency } from "./tquery";
+
+// The App for chips created deep inside lists (set once by the plugin on load)
+let currentApp: App | null = null;
+export function setUiApp(app: App) {
+	currentApp = app;
+}
+function appOf(_el: HTMLElement): App {
+	if (!currentApp) throw new Error("Task Hours: app not set");
+	return currentApp;
+}
 
 export type GroupBy = "none" | "start" | "due" | "file";
 
@@ -79,7 +89,7 @@ export function setFields(
 
 /** ✏️ dialog: estimate, start date and due date (the only fields Task Hours edits) */
 export class EditTaskModal extends Modal {
-	private estimate: string;
+	private picker!: EstimatePicker;
 	private start: string;
 	private due: string;
 	// Fields Tasks added — editable only when the task already has them
@@ -90,7 +100,6 @@ export class EditTaskModal extends Modal {
 		private task: Task
 	) {
 		super(app);
-		this.estimate = task.minutes === null ? "" : (estimateText(task.raw) ?? "");
 		this.start = task.startDate ?? "";
 		this.due = task.due ?? "";
 		if (task.scheduled) this.extra.scheduled = task.scheduled;
@@ -105,13 +114,9 @@ export class EditTaskModal extends Modal {
 		const { contentEl } = this;
 		this.setTitle(tr("edit.title"));
 		contentEl.createDiv({ cls: "task-hours-edit-name", text: this.task.name });
-		new Setting(contentEl)
-			.setName(tr("add.estimate"))
-			.setDesc(tr("add.estimateDesc"))
-			.addText((t) => {
-				t.setPlaceholder(tr("add.estimatePh")).setValue(this.estimate).onChange((v) => (this.estimate = v));
-				window.setTimeout(() => t.inputEl.focus(), 0);
-			});
+		const estRow = new Setting(contentEl).setName(tr("add.estimate"));
+		estRow.settingEl.addClass("task-hours-estrow");
+		this.picker = new EstimatePicker(estRow.controlEl, this.task.minutes, { autofocus: true, onEnter: () => void this.save() });
 		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
 			t.inputEl.type = "date";
 			t.setValue(this.start).onChange((v) => (this.start = v));
@@ -161,8 +166,8 @@ export class EditTaskModal extends Modal {
 	}
 
 	private async save() {
-		const est = this.estimate.trim();
-		if (est && parseDuration(est) === null) {
+		const est = this.picker.value;
+		if (est === undefined) {
 			new Notice(tr("add.badEstimate"));
 			return;
 		}
@@ -172,7 +177,7 @@ export class EditTaskModal extends Modal {
 		}
 		const extra: Partial<Record<TasksField, string | null>> = {};
 		for (const [f, v] of Object.entries(this.extra) as [TasksField, string][]) extra[f] = v.trim() && v !== "none" ? v.trim() : null;
-		await setFields(this.app, this.task, { estimate: est || null, start: this.start || null, due: this.due || null }, extra);
+		await setFields(this.app, this.task, { estimate: est, start: this.start || null, due: this.due || null }, extra);
 		this.close();
 	}
 
@@ -317,40 +322,11 @@ function estimateChip(parent: HTMLElement, t: Task, onSet: (v: string | null) =>
 	});
 	const edit = (e: Event) => {
 		stop(e);
-		const input = createEl("input", { type: "text", cls: "task-hours-input task-hours-input-est" });
-		input.placeholder = tr("add.estimatePh");
-		const orig = t.minutes === null ? "" : estimateText(t.raw) ?? "";
-		input.value = orig;
-		chip.replaceWith(input);
-		input.focus();
-		input.select();
-		let finished = false;
-		const finish = (commit: boolean) => {
-			if (finished) return;
-			const v = input.value.trim();
-			if (commit && v && parseDuration(v) === null) {
-				new Notice(tr("list.badEstimate"));
-				return;
-			}
-			finished = true;
-			input.replaceWith(chip);
-			if (commit && v !== orig) onSet(v || null);
-		};
-		input.addEventListener("keydown", (ev) => {
-			if (ev.key === "Enter" && !ev.isComposing) finish(true);
-			if (ev.key === "Escape") {
-				input.value = orig;
-				finish(false);
-			}
-		});
-		input.addEventListener("blur", () => {
-			if (!finished) {
-				const v = input.value.trim();
-				if (v && parseDuration(v) === null) input.value = orig;
-				finish(true);
-			}
-		});
-		input.addEventListener("click", stop);
+		// a small dialog with a number, an h / min switch and quick picks
+		new EstimateModal(appOf(chip), t.name, t.minutes, (v) => {
+			const before = t.minutes === null ? null : durationValue(t.minutes);
+			if (v !== before) onSet(v);
+		}).open();
 	};
 	chip.addEventListener("click", edit);
 	chip.addEventListener("keydown", (e) => e.key === "Enter" && edit(e));
