@@ -139,6 +139,10 @@ const en = {
 	// settings
 	"set.auto": "Convert automatically when leaving the line",
 	"set.autoDesc": "Write “- [ ] Lunch +2h @tomorrow !fri” and press Enter or move to another line to get “⏱️ 2h 🛫 date 📅 date”.",
+	"set.blockSuggest": "Suggest code block names",
+	"set.blockSuggestDesc": "After ``` , typing t suggests tasks and task-hours. Choosing one also adds the closing ```.",
+	"block.tasks": "Tasks plugin query",
+	"block.taskHours": "Task Hours query (shows estimates)",
 	"set.suggest": "Show suggestions",
 	"set.suggestDesc": "Show date and estimate suggestions when you type the start, due or estimate symbol in a task.",
 	"set.startChar": "Start date symbol",
@@ -281,6 +285,10 @@ const ja: Record<Key, string> = {
 
 	"set.auto": "行を離れたら自動で変換する",
 	"set.autoDesc": "「- [ ] 昼食 +2h @明日 !金曜」と書いて Enter や別の行へ移動すると、「⏱️ 2h 🛫 日付 📅 日付」に変換します。",
+	"set.blockSuggest": "コードブロック名の候補を表示する",
+	"set.blockSuggestDesc": "``` のあとに t と打つと tasks と task-hours を候補に出します。選ぶと閉じる ``` も入ります。",
+	"block.tasks": "Tasks プラグインのクエリ",
+	"block.taskHours": "Task Hours のクエリ（見積も表示）",
 	"set.suggest": "候補を表示する",
 	"set.suggestDesc": "タスク行で開始日・納期・見積の記号を打つと、候補を表示します。",
 	"set.startChar": "開始日の記号",

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.0
+
+- New: typing ```` ``` ```` then `t` suggests **tasks** and **task-hours** as the block name; choosing one also adds the closing fence and puts the cursor inside.
+- New setting **Suggest code block names** to turn this off.
+
 ## 1.1.0
 
 - Estimates are now edited with a number plus an **h / min** switch, a preview and quick picks — from a ⏱️ click, the ✏️ dialog and the add-task form. A plain `50` is no longer saved as 50 h: like `+`, 10 or more is taken as minutes, and you can switch the unit.

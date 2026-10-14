@@ -59,6 +59,10 @@ becomes
 
 In settings you can turn off automatic conversion or suggestions, change the `@` / `!` symbols, or require parentheses for estimates.
 
+### Code block names
+
+Type ```` ``` ```` and then `t` to get **tasks** and **task-hours** as suggestions, so you can pick the plugin each block is for. Choosing one also writes the closing ```` ``` ```` and puts the cursor inside. Turn this off in settings with **Suggest code block names**.
+
 There's also a form for adding tasks (task name, estimate, start, due), available from the ribbon. It's handy on mobile.
 
 ## Dashboard

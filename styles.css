@@ -127,3 +127,12 @@
 .task-hours-estpicker-chip { padding: 2px 8px; height: auto; font-size: var(--font-ui-small); }
 .task-hours-estrow .setting-item-control { justify-content: flex-start; }
 .task-hours-estrow { flex-wrap: wrap; }
+
+/* Code block name suggestions */
+.task-hours-blocksug-name {
+	font-family: var(--font-monospace);
+}
+.task-hours-blocksug-desc {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}

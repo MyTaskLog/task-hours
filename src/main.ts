@@ -19,6 +19,7 @@ import { DASHBOARD_VIEW, DashboardView, RANGE_DAYS, RangeDays } from "./dashboar
 import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
 import { EstimatePicker } from "./estimate";
 import { Lang, setLang, t as tr } from "./i18n";
+import { CodeBlockSuggest } from "./fence";
 import { PlainUnit, Query, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
 import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
@@ -30,6 +31,7 @@ const BLOCK_NAMES = ["task-hours", "Task-Hours", "Task-hours", "TASK-HOURS", "ta
 export interface TaskHoursSettings extends ShorthandOptions {
 	autoConvert: boolean; // convert shorthand when leaving a line
 	dateSuggest: boolean; // suggest dates after @ / !
+	blockSuggest: boolean; // suggest tasks / task-hours after ```
 	dashboardFolder: string | null; // null = not chosen yet, "" = entire vault
 	dashboardDays: RangeDays; // length of the "next N days" tile
 	language: "auto" | Lang;
@@ -43,6 +45,7 @@ const DEFAULT_SETTINGS: TaskHoursSettings = {
 	bareEstimate: true,
 	autoConvert: true,
 	dateSuggest: true,
+	blockSuggest: true,
 	dayFirst: false,
 	dashboardFolder: null,
 	dashboardDays: 14,
@@ -75,6 +78,7 @@ export default class TaskHoursPlugin extends Plugin {
 		this.registerView(DASHBOARD_VIEW, (leaf: WorkspaceLeaf) => new DashboardView(leaf, this));
 		this.registerEditorSuggest(new DateSuggest(this.app, this));
 		this.registerEditorSuggest(new EstimateSuggest(this.app, this));
+		this.registerEditorSuggest(new CodeBlockSuggest(this.app, this));
 		this.registerEditorExtension(shorthandExtension(this));
 		this.addSettingTab(new TaskHoursSettingTab(this.app, this));
 
@@ -350,6 +354,7 @@ class TaskHoursBlock extends MarkdownRenderChild {
 type SettingKey =
 	| "autoConvert"
 	| "dateSuggest"
+	| "blockSuggest"
 	| "startChar"
 	| "dueChar"
 	| "estimateChar"
@@ -372,6 +377,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 		return [
 			{ name: tr("set.auto"), desc: tr("set.autoDesc"), control: { type: "toggle", key: "autoConvert" } },
 			{ name: tr("set.suggest"), desc: tr("set.suggestDesc"), control: { type: "toggle", key: "dateSuggest" } },
+			{ name: tr("set.blockSuggest"), desc: tr("set.blockSuggestDesc"), control: { type: "toggle", key: "blockSuggest" } },
 			{
 				name: tr("set.startChar"),
 				desc: tr("set.startCharDesc"),
@@ -425,7 +431,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 		};
 		containerEl.empty();
 
-		const toggle = (name: string, desc: string, key: "autoConvert" | "dateSuggest" | "bareEstimate" | "dayFirst") =>
+		const toggle = (name: string, desc: string, key: "autoConvert" | "dateSuggest" | "blockSuggest" | "bareEstimate" | "dayFirst") =>
 			new Setting(containerEl)
 				.setName(name)
 				.setDesc(desc)
@@ -450,6 +456,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 
 		toggle(tr("set.auto"), tr("set.autoDesc"), "autoConvert");
 		toggle(tr("set.suggest"), tr("set.suggestDesc"), "dateSuggest");
+		toggle(tr("set.blockSuggest"), tr("set.blockSuggestDesc"), "blockSuggest");
 		symbol(tr("set.startChar"), tr("set.startCharDesc"), "startChar");
 		symbol(tr("set.dueChar"), "", "dueChar");
 		symbol(tr("set.estimateChar"), tr("set.estimateCharDesc"), "estimateChar");
