@@ -67,3 +67,14 @@
 .task-hours-range-btn + .task-hours-range-btn { border-left: 1px solid var(--background-modifier-border); }
 .task-hours-range-btn:hover { background: var(--background-modifier-hover); color: var(--text-normal); }
 .task-hours-range-btn.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }
+
+/* ---- Tasks-style query results ---- */
+.task-hours-ro { white-space: nowrap; color: var(--text-muted); }
+.task-hours-edit { display: inline-flex; align-items: center; cursor: pointer; color: var(--text-faint); padding: 0 2px; }
+.task-hours-edit:hover, .task-hours-edit:focus-visible { color: var(--text-normal); }
+.task-hours-edit svg { width: 14px; height: 14px; }
+.task-hours-group-l2 { margin-left: 12px; font-weight: 500; }
+.task-hours-group-l3 { margin-left: 24px; font-weight: 400; }
+.task-hours-error-title { font-weight: 600; margin-bottom: 2px; }
+.task-hours-explain { font-size: var(--font-ui-small); color: var(--text-muted); border-left: 2px solid var(--background-modifier-border); padding-left: 8px; margin-bottom: 8px; }
+.task-hours-edit-name { color: var(--text-muted); margin-bottom: 8px; }

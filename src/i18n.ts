@@ -96,6 +96,15 @@ const en = {
 	"n.nothing": "Nothing to convert on this line",
 	"n.hasBlock": "This note already has an estimate total block",
 
+	// edit dialog (pencil)
+	"edit.title": "Edit estimate and dates",
+	"edit.save": "Save",
+	"edit.cancel": "Cancel",
+	"q.tasks": "{n} tasks",
+	"q.shown": "showing {shown} of {n}",
+	"q.errorTitle": "Task Hours query error",
+	"q.explain": "Explanation",
+
 	// add-task form
 	"add.title": "Add task",
 	"add.name": "Task name",
@@ -209,6 +218,14 @@ const ja: Record<Key, string> = {
 	"n.openNote": "Markdown ノートを開いてから実行してください",
 	"n.nothing": "変換できる簡易入力がありません",
 	"n.hasBlock": "このノートには既に見積合計ブロックがあります",
+
+	"edit.title": "見積と日付を編集",
+	"edit.save": "保存",
+	"edit.cancel": "キャンセル",
+	"q.tasks": "{n}件",
+	"q.shown": "{n}件中 {shown}件を表示",
+	"q.errorTitle": "Task Hours のクエリエラー",
+	"q.explain": "クエリの説明",
 
 	"add.title": "タスクを追加",
 	"add.name": "タスク名",

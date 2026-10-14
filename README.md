@@ -80,9 +80,47 @@ The folder is remembered, so next time it's one click.
 - Use the checkbox to complete or reopen a task.
 - Click a task name to jump to it in its note.
 
-## Totals inside a note
+## Queries (Tasks syntax)
 
-Run the command **Show estimate total at top of note** to add this block to the top of the current note. It shows the total for the note's open tasks:
+A `task-hours` code block takes the same query language as the [Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) plugin, and adds the **estimate total** on top and a **subtotal for each group**:
+
+````markdown
+```task-hours
+not done
+has start date
+due before next week
+group by folder
+```
+````
+
+It searches the whole vault, like Tasks. The block name works in any case: `task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`. (A space, as in `Task Hours`, isn't possible — Markdown only reads the first word as the block name.)
+
+Supported instructions:
+
+| | |
+|---|---|
+| Status | `done` · `not done` · `status.type is TODO` · `status.name includes …` |
+| Dates | `due` `start` `scheduled` `created` `done` `cancelled` `happens` with `on` / `before` / `after` / `on or before` / `on or after` / `in` + a date or range: `today`, `2026-10-20`, `2026-10-01 2026-10-07`, `next week`, `this month`, `last quarter`, `2026-W42`, `2026-10`, `2026-Q4`, `in two weeks`, `14 days ago`, `next monday` … · `has due date` · `no start date` |
+| Priority | `priority is high` · `priority is above medium` · `priority is not none` |
+| Recurrence | `is recurring` · `is not recurring` · `recurrence includes week` |
+| Text | `description` `path` `folder` `filename` `heading` `root` + `includes` / `does not include` / `regex matches /…/` |
+| Tags | `has tags` · `no tags` · `tags include #work` · `tag does not include #home` |
+| Dependencies | `is blocked` · `is blocking` · `has id` · `has depends on` |
+| Boolean | `(due today) OR (start today)` · `(tags include work) AND NOT (priority is high)` — XOR too; put each filter in parentheses |
+| **Estimates** (Task Hours) | `has estimate` · `no estimate` · `estimate above 2h` · `estimate below 30m` |
+| Sort | `sort by due` `start` `scheduled` `priority` `urgency` `description` `path` `filename` `heading` `tag` `status` `done` `created` `happens` `random`, **`sort by estimate`** (longest first) — add `reverse` to flip |
+| Group | `group by due` `start` `scheduled` `happens` `priority` `folder` `filename` `path` `root` `heading` `backlink` `tags` `status` `recurring` `urgency`, **`group by estimate`** — several levels allowed |
+| Limit | `limit 10` · `limit to 10 tasks` · `limit groups 3` |
+| Display | `hide edit button` `hide backlink` `hide task count` `hide priority` `hide start date` `hide due date` `hide scheduled date` `hide created date` `hide done date` `hide recurrence rule` `hide tags` · `show group count` · `show urgency` · `explain` |
+| Placeholders | `{{query.file.path}}` `{{query.file.folder}}` `{{query.file.filename}}` … (for example `path includes {{query.file.path}}` for this note only) |
+
+Not supported: `filter by function`, `sort by function`, `group by function` (custom JavaScript). If a query has a line Task Hours can't read, it shows the error instead of results, like Tasks.
+
+The results show the Tasks fields (priority, recurrence, created / scheduled / done dates, tags) as well. You can change the estimate, start date and due date — click the ⏱️ / 🛫 / 📅 value, or the ✏️ pencil to edit all three at once. Other fields are edited with Tasks or in the note itself.
+
+### Older syntax
+
+Blocks written as `key: value` keep working and look at **this note** by default. The command **Show estimate total at top of note** adds one of these:
 
 ````markdown
 ```task-hours
@@ -90,29 +128,16 @@ show: summary
 ```
 ````
 
-You can also write a query to keep a fixed view in a note. Dates and estimates can be edited from these lists too.
-
-````markdown
-```task-hours
-folder: Work
-start: this week
-group: start
-```
-````
-
 | Key | Values | Default |
 |---|---|---|
 | `scope` | `this` (this note) / `all` (whole vault) | `this` |
 | `folder` | folder path, subfolders included (`/` = whole vault) | — |
-| `start` | start date filter (below) | — |
-| `due` | due date filter (below) | — |
+| `start` / `due` | `today`, `this week`, `next 7 days`, `2026-10-01..2026-10-07`, `before today`, `none`, `any` … | — |
 | `status` | `open` / `done` / `all` | `open` |
-| `group` | `none` / `start` / `due` / `file` (with subtotals) | `none` |
+| `group` | `none` / `start` / `due` / `file` | `none` |
 | `sort` | `start` / `due` / `estimate` / `file` | `start` |
 | `show` | `list` / `summary` (total only) | `list` |
 | `limit` | max tasks shown (totals still count all) | — |
-
-Date filters: `today` `tomorrow` `yesterday` · `this week` `next week` `last week` (weeks start Monday) · `this month` `next month` · `next 7 days` · `2026-10-06` · `2026-10-01..2026-10-07` (either side optional) · `before today` `after 2026-10-10` (exclusive) · `until 2026-10-10` `from today` (inclusive) · `none` (no date) · `any` (has a date)
 
 ## Details
 

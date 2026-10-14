@@ -2,23 +2,56 @@
 
 import { t as tr } from "./i18n";
 
+export type Priority = "highest" | "high" | "medium" | "none" | "low" | "lowest";
+export type StatusType = "TODO" | "IN_PROGRESS" | "DONE" | "CANCELLED";
+
 export interface Task {
 	path: string;
 	line: number;
 	raw: string;
-	status: string;
+	status: string; // the character inside [ ]
+	statusType: StatusType;
 	done: boolean;
-	name: string;
+	name: string; // description without the Tasks fields (tags kept)
 	minutes: number | null; // estimate in minutes
-	start: string | null; // YYYY-MM-DD
+	start: string | null; // 🛫, or ⏳ when there is no 🛫 (used by the dashboard)
 	due: string | null; // YYYY-MM-DD
+	// Tasks plugin fields, as written
+	startDate: string | null; // 🛫 only
+	scheduled: string | null; // ⏳
+	created: string | null; // ➕
+	doneDate: string | null; // ✅
+	cancelled: string | null; // ❌
+	priority: Priority;
+	recurrence: string | null; // 🔁 every week …
+	onCompletion: string | null; // 🏁 keep / delete
+	id: string | null; // 🆔
+	dependsOn: string[]; // ⛔
+	tags: string[];
+	heading: string | null;
 }
+
+/** highest first (Tasks' order) */
+export const PRIORITY_ORDER: Priority[] = ["highest", "high", "medium", "none", "low", "lowest"];
+export const PRIORITY_EMOJI: Record<Priority, string> = { highest: "🔺", high: "⏫", medium: "🔼", none: "", low: "🔽", lowest: "⏬" };
 
 export const TASK_RE = /^\s*(?:[-*+]|\d+[.)])\s+\[(.)\]\s+(.*)$/;
 const DATE = "(\\d{4}-\\d{2}-\\d{2})";
-const START_RE = new RegExp("🛫\\uFE0F?\\s*" + DATE, "u");
-const SCHEDULED_RE = new RegExp("⏳\\uFE0F?\\s*" + DATE, "u");
-const DUE_RE = new RegExp("📅\\uFE0F?\\s*" + DATE, "u");
+const dateRe = (emoji: string) => new RegExp(emoji + "\\uFE0F?\\s*" + DATE, "u");
+const START_RE = dateRe("🛫");
+const SCHEDULED_RE = dateRe("⏳");
+const DUE_RE = dateRe("📅");
+const CREATED_RE = dateRe("➕");
+const DONE_RE = dateRe("✅");
+const CANCELLED_RE = dateRe("❌");
+// Characters that start a Tasks field (used to find where a free-text field ends)
+const FIELD_START = "🛫⏳📅✅➕❌⏱🔺⏫🔼🔽⏬🔁🏁🆔⛔";
+const RECURRENCE_RE = new RegExp("🔁\\uFE0F?\\s*([^" + FIELD_START + "^]*)", "u");
+const ON_COMPLETION_RE = /🏁\uFE0F?\s*([A-Za-z]+)/u;
+const ID_RE = /🆔\uFE0F?\s*([A-Za-z0-9_-]+)/u;
+const DEPENDS_RE = /⛔\uFE0F?\s*([A-Za-z0-9_,\s-]+)/u;
+const TAG_RE = /(?:^|\s)(#[^\s#,.;:!?'"()[\]{}]+)/gu;
+const BLOCK_ID_RE = /\s\^[A-Za-z0-9-]+\s*$/;
 // Units are listed longest first. With the short ones (m, h) first,
 // "30min" would match as "30m" and leave "in" behind in the task name.
 const UNIT_H = "(?:hours?|hrs?|h|時間|時)";
@@ -33,9 +66,13 @@ const EST_RE = new RegExp("⏱\\uFE0F?\\s*(" + DURATION + ")", "iu");
 // Tasks plugin fields stripped from the displayed name
 const STRIP_RES = [
 	EST_RE,
-	/[🛫⏳📅✅➕❌]️?\s*\d{4}-\d{2}-\d{2}/gu,
-	/🔁️?[^🛫⏳📅✅➕❌⏱🔺⏫🔼🔽⏬]*/gu,
-	/[🔺⏫🔼🔽⏬]️?/gu,
+	/[🛫⏳📅✅➕❌]\uFE0F?\s*\d{4}-\d{2}-\d{2}/gu,
+	new RegExp("🔁\\uFE0F?[^" + FIELD_START + "^]*", "gu"),
+	/🏁\uFE0F?\s*[A-Za-z]+/gu,
+	/🆔\uFE0F?\s*[A-Za-z0-9_-]+/gu,
+	/⛔\uFE0F?\s*[A-Za-z0-9_,\s-]+/gu,
+	/[🔺⏫🔼🔽⏬]\uFE0F?/gu,
+	BLOCK_ID_RE,
 ];
 
 /** The estimate as written in the line (e.g. "1h30m"), or null */
@@ -69,27 +106,59 @@ export function formatDuration(minutes: number): string {
 	return tr("dur.m", { m });
 }
 
-export function parseTaskLine(raw: string, path: string, line: number): Task | null {
-	const m = raw.match(TASK_RE);
+function statusTypeOf(symbol: string): StatusType {
+	if (symbol === "x" || symbol === "X") return "DONE";
+	if (symbol === "-") return "CANCELLED";
+	if (symbol === "/") return "IN_PROGRESS";
+	return "TODO";
+}
+
+function priorityOf(body: string): Priority {
+	if (body.includes("🔺")) return "highest";
+	if (body.includes("⏫")) return "high";
+	if (body.includes("🔼")) return "medium";
+	if (body.includes("🔽")) return "low";
+	if (body.includes("⏬")) return "lowest";
+	return "none";
+}
+
+export function parseTaskLine(raw: string, path: string, line: number, heading: string | null = null): Task | null {
+	const m = raw.replace(/\r$/, "").match(TASK_RE);
 	if (!m) return null;
 	const status = m[1];
 	const body = m[2];
+	const get = (re: RegExp) => body.match(re)?.[1] ?? null;
 	const est = body.match(EST_RE);
-	const start = body.match(START_RE) ?? body.match(SCHEDULED_RE);
-	const due = body.match(DUE_RE);
+	const startDate = get(START_RE);
+	const scheduled = get(SCHEDULED_RE);
 	let name = body;
 	for (const re of STRIP_RES) name = name.replace(re, " ");
 	name = name.replace(/\s+/g, " ").trim();
+	const tags = Array.from(name.matchAll(TAG_RE), (x) => x[1]);
+	const recurrence = get(RECURRENCE_RE)?.trim() || null;
 	return {
 		path,
 		line,
 		raw,
 		status,
+		statusType: statusTypeOf(status),
 		done: DONE_STATUSES.includes(status),
 		name: name || tr("untitled"),
 		minutes: est ? parseDuration(est[1]) : null,
-		start: start ? start[1] : null,
-		due: due ? due[1] : null,
+		start: startDate ?? scheduled,
+		due: get(DUE_RE),
+		startDate,
+		scheduled,
+		created: get(CREATED_RE),
+		doneDate: get(DONE_RE),
+		cancelled: get(CANCELLED_RE),
+		priority: priorityOf(body),
+		recurrence,
+		onCompletion: get(ON_COMPLETION_RE),
+		id: get(ID_RE),
+		dependsOn: (get(DEPENDS_RE) ?? "").split(",").map((s) => s.trim()).filter(Boolean),
+		tags,
+		heading,
 	};
 }
 
@@ -97,10 +166,21 @@ export function parseTasks(content: string, path: string): Task[] {
 	const out: Task[] = [];
 	const lines = content.split("\n");
 	let inFence = false;
+	let inFrontmatter = lines[0]?.trim() === "---";
+	let heading: string | null = null;
 	lines.forEach((raw, i) => {
+		if (inFrontmatter) {
+			if (i > 0 && /^(---|\.\.\.)\s*$/.test(raw)) inFrontmatter = false;
+			return;
+		}
 		if (/^\s*(```|~~~)/.test(raw)) inFence = !inFence;
 		if (inFence) return;
-		const t = parseTaskLine(raw, path, i);
+		const h = raw.match(/^#{1,6}\s+(.*?)\s*#*\s*$/);
+		if (h) {
+			heading = h[1];
+			return;
+		}
+		const t = parseTaskLine(raw, path, i, heading);
 		if (t) out.push(t);
 	});
 	return out;
@@ -356,9 +436,9 @@ const FIELD_TEXT: Record<Field, (v: string) => string> = {
 };
 // When inserting, place the field before these (matches the Tasks plugin's order)
 const INSERT_BEFORE: Record<Field, RegExp> = {
-	estimate: /[🔺⏫🔼🔽⏬🔁➕🛫⏳📅✅❌🆔⛔]|\s\^[A-Za-z0-9-]+\s*$/u,
-	start: /[⏳📅✅❌🆔⛔]|\s\^[A-Za-z0-9-]+\s*$/u,
-	due: /[✅❌🆔⛔]|\s\^[A-Za-z0-9-]+\s*$/u,
+	estimate: /[🔺⏫🔼🔽⏬🔁🏁➕🛫⏳📅✅❌🆔⛔]|\s\^[A-Za-z0-9-]+\s*$/u,
+	start: /[⏳📅✅❌🆔⛔🏁]|\s\^[A-Za-z0-9-]+\s*$/u,
+	due: /[✅❌🆔⛔🏁]|\s\^[A-Za-z0-9-]+\s*$/u,
 };
 
 function tidy(line: string): string {

@@ -20,9 +20,11 @@ import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } 
 import { Lang, setLang, t as tr } from "./i18n";
 import { Query, buildTaskLine, filterTasks, formatDuration, parseDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
-import { collectTasks, filesInFolder, renderTaskList } from "./ui";
+import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
+import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList } from "./ui";
 
 const BLOCK = "task-hours";
+const BLOCK_NAMES = ["task-hours", "Task-Hours", "Task-hours", "TASK-HOURS", "taskhours", "TaskHours", "Taskhours", "TASKHOURS", "task_hours"];
 
 export interface TaskHoursSettings extends ShorthandOptions {
 	autoConvert: boolean; // convert shorthand when leaving a line
@@ -55,9 +57,16 @@ export default class TaskHoursPlugin extends Plugin {
 		const l = this.settings.language;
 		setLang(l === "auto" ? (getLanguage().startsWith("ja") ? "ja" : "en") : l);
 
-		this.registerMarkdownCodeBlockProcessor(BLOCK, (source, el, ctx) => {
-			ctx.addChild(new TaskHoursBlock(this.app, el, source, ctx));
-		});
+		// The block name works in any case: task-hours, Task-Hours, TASK-HOURS, taskhours …
+		for (const name of BLOCK_NAMES) {
+			try {
+				this.registerMarkdownCodeBlockProcessor(name, (source, el, ctx) => {
+					ctx.addChild(new TaskHoursBlock(this.app, el, source, ctx));
+				});
+			} catch {
+				/* already registered under another spelling */
+			}
+		}
 		this.registerView(DASHBOARD_VIEW, (leaf: WorkspaceLeaf) => new DashboardView(leaf, this));
 		this.registerEditorSuggest(new DateSuggest(this.app, this));
 		this.registerEditorSuggest(new EstimateSuggest(this.app, this));
@@ -252,6 +261,47 @@ class TaskHoursBlock extends MarkdownRenderChild {
 	}
 
 	async render() {
+		if (isLegacyQuery(this.source)) return this.renderLegacy();
+		return this.renderTasksQuery();
+	}
+
+	/** Tasks-plugin syntax: searches the whole vault, like Tasks */
+	private async renderTasksQuery() {
+		const el = this.containerEl;
+		const q = parseTQuery(this.source, { path: this.ctx.sourcePath });
+		el.empty();
+		el.addClass("task-hours");
+		if (q.errors.length) {
+			const err = el.createDiv({ cls: "task-hours-error" });
+			err.createDiv({ cls: "task-hours-error-title", text: tr("q.errorTitle") });
+			q.errors.forEach((e) => err.createDiv({ text: "⚠ " + e }));
+			return;
+		}
+		if (q.explain) {
+			const ex = el.createDiv({ cls: "task-hours-explain" });
+			ex.createDiv({ cls: "task-hours-error-title", text: tr("q.explain") });
+			q.filters.forEach((f) => ex.createDiv({ text: f.text }));
+		}
+		const all = await collectTasks(this.app, this.app.vault.getMarkdownFiles(), parseTasks);
+		const res = runTQuery(q, all, new Date(), formatDuration);
+
+		const head = el.createDiv({ cls: "task-hours-summary" });
+		head.createSpan({ cls: "task-hours-total", text: `⏱️ ${formatDuration(totalMinutes(res.tasks))}` });
+		if (!q.hide.has("task count")) {
+			const text = res.shown < res.tasks.length ? tr("q.shown", { shown: res.shown, n: res.tasks.length }) : tr("q.tasks", { n: res.tasks.length });
+			head.createSpan({ cls: "task-hours-meta", text });
+		}
+		const noEst = res.tasks.filter((t) => t.minutes === null).length;
+		if (noEst && !q.hide.has("estimate")) head.createSpan({ cls: "task-hours-warn", text: tr("sum.noEstimate", { n: noEst }) });
+		if (!res.tasks.length) {
+			el.createDiv({ cls: "task-hours-empty", text: tr("sum.empty") });
+			return;
+		}
+		renderQueryGroups(this.app, el, res.groups, { group: "none", showFile: true, tasksMode: true, hide: q.hide, show: q.show });
+	}
+
+	/** The original "key: value" syntax */
+	private async renderLegacy() {
 		const q = parseQuery(this.source, new Date());
 		const tasks = filterTasks(await collectTasks(this.app, this.targetFiles(q), parseTasks), q);
 		const el = this.containerEl;

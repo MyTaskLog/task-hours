@@ -83,9 +83,47 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 - チェックボックスで完了／未完了を切り替えられます。
 - タスク名をクリックすると、元のノートの該当行へ移動します。
 
-## ノート内の集計（コードブロック）
+## クエリ（Tasks と同じ書き方）
 
-コマンド「ノート最上部に見積合計を表示」を実行すると、ノートの先頭に次のブロックが入り、このノートの未完了タスクの合計が表示されます。
+`task-hours` のコードブロックには、[Tasks](https://publish.obsidian.md/tasks/Queries/About+Queries) プラグインと同じクエリが書けます。Tasks と違うのは、一番上に**見積時間の合計**、グループごとに**小計**が出ることです。
+
+````markdown
+```task-hours
+not done
+has start date
+due before next week
+group by folder
+```
+````
+
+Tasks と同じく保管庫全体が対象です。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
+
+使える命令：
+
+| | |
+|---|---|
+| 状態 | `done` · `not done` · `status.type is TODO` · `status.name includes …` |
+| 日付 | `due` `start` `scheduled` `created` `done` `cancelled` `happens` ＋ `on` / `before` / `after` / `on or before` / `on or after` / `in` ＋ 日付や期間：`today`、`2026-10-20`、`2026-10-01 2026-10-07`、`next week`、`this month`、`last quarter`、`2026-W42`、`2026-10`、`2026-Q4`、`in two weeks`、`14 days ago`、`next monday` など · `has due date` · `no start date` |
+| 優先度 | `priority is high` · `priority is above medium` · `priority is not none` |
+| 繰り返し | `is recurring` · `is not recurring` · `recurrence includes week` |
+| 文字 | `description` `path` `folder` `filename` `heading` `root` ＋ `includes` / `does not include` / `regex matches /…/` |
+| タグ | `has tags` · `no tags` · `tags include #work` · `tag does not include #home` |
+| 依存関係 | `is blocked` · `is blocking` · `has id` · `has depends on` |
+| 組み合わせ | `(due today) OR (start today)` · `(tags include work) AND NOT (priority is high)`。XOR も可。条件は1つずつ括弧で囲みます |
+| **見積**（Task Hours 独自） | `has estimate`（見積あり）· `no estimate`（見積なし）· `estimate above 2h` · `estimate below 30m` |
+| 並び順 | `sort by due` `start` `scheduled` `priority` `urgency` `description` `path` `filename` `heading` `tag` `status` `done` `created` `happens` `random`、**`sort by estimate`**（長い順）。`reverse` で逆順 |
+| グループ | `group by due` `start` `scheduled` `happens` `priority` `folder` `filename` `path` `root` `heading` `backlink` `tags` `status` `recurring` `urgency`、**`group by estimate`**。複数行で入れ子にできます |
+| 件数 | `limit 10` · `limit to 10 tasks` · `limit groups 3` |
+| 表示 | `hide edit button` `hide backlink` `hide task count` `hide priority` `hide start date` `hide due date` `hide scheduled date` `hide created date` `hide done date` `hide recurrence rule` `hide tags` · `show group count`（小計に件数も表示）· `show urgency` · `explain` |
+| 置き換え | `{{query.file.path}}` `{{query.file.folder}}` `{{query.file.filename}}` など（例：`path includes {{query.file.path}}` でこのノートだけ） |
+
+`filter by function` など、JavaScript で条件を書く命令には対応していません。読めない行があると、Tasks と同じく結果の代わりにエラーを表示します。
+
+結果には Tasks の項目（優先度・繰り返し・作成日・予定日・完了日・タグ）も表示されます。変更できるのは見積・開始日・納期の3つです。⏱️ / 🛫 / 📅 をクリックするか、✏️（鉛筆）で3つまとめて編集できます。そのほかの項目は Tasks かノート上で直接編集してください。
+
+### 以前の書き方
+
+`キー: 値` の形で書いたブロックも引き続き使えます。こちらは初期設定で**このノートだけ**が対象です。コマンド「ノート最上部に見積合計を表示」で入るのもこの形です。
 
 ````markdown
 ```task-hours
@@ -93,31 +131,18 @@ show: summary
 ```
 ````
 
-条件を書けば、ノートの中に固定の集計を置けます。この一覧からも日付や見積を変更できます。
-
-````markdown
-```task-hours
-folder: 仕事
-start: this week
-group: start
-```
-````
-
 | キー | 値 | 既定 |
 |---|---|---|
 | `scope` | `this`（このノート） / `all`（Vault 全体） | `this` |
 | `folder` | フォルダパス（サブフォルダも含む。`/` で Vault 全体） | — |
-| `start` | 開始日の条件（下記） | — |
-| `due` | 納期の条件（下記） | — |
+| `start` / `due` | `today`、`this week`、`next 7 days`、`2026-10-01..2026-10-07`、`before today`、`none`、`any` など | — |
 | `status` | `open` / `done` / `all` | `open` |
-| `group` | `none` / `start` / `due` / `file`（グループごとの小計つき） | `none` |
+| `group` | `none` / `start` / `due` / `file` | `none` |
 | `sort` | `start` / `due` / `estimate` / `file` | `start` |
-| `show` | `list`（一覧） / `summary`（合計のみ） | `list` |
+| `show` | `list` / `summary`（合計のみ） | `list` |
 | `limit` | 表示件数の上限（合計は全件で計算） | — |
 
 キーは日本語でも書けます（範囲・フォルダ・開始・納期・状態・グループ・並び順・表示）。
-
-条件で使える日付：`today` `tomorrow` `yesterday` / `this week` `next week` `last week`（月曜始まり） / `this month` `next month` / `next 7 days` / `2026-10-06` / `2026-10-01..2026-10-07`（片側は省略可） / `before today` `after 2026-10-10`（その日を含まない） / `until 2026-10-10` `from today`（その日を含む。`2026-10-10まで` `今日から` でも可） / `none`（日付なし） / `any`（日付あり）
 
 ## その他
 

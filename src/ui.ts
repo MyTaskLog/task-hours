@@ -1,9 +1,10 @@
 // Task list rendering and editing from the list (done, start, due, estimate)
 
-import { App, MarkdownView, Notice, TFile } from "obsidian";
+import { App, MarkdownView, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import { headerDate, labelDate } from "./dates";
 import { t as tr } from "./i18n";
-import { Field, Task, estimateText, fmt, formatDuration, parseDuration, setLineField, totalMinutes } from "./parse";
+import { Field, PRIORITY_EMOJI, Task, estimateText, fmt, formatDuration, parseDuration, setLineField, totalMinutes } from "./parse";
+import { TGroup, filenameOf, urgency } from "./tquery";
 
 export type GroupBy = "none" | "start" | "due" | "file";
 
@@ -42,6 +43,84 @@ async function rewrite(app: App, t: Task, fn: (line: string) => string): Promise
 
 export function setField(app: App, t: Task, field: Field, value: string | null) {
 	return rewrite(app, t, (l) => setLineField(l, field, value));
+}
+
+/** Set several fields in one write (used by the edit dialog) */
+export function setFields(app: App, t: Task, values: Partial<Record<Field, string | null>>) {
+	return rewrite(app, t, (l) => {
+		for (const f of ["estimate", "start", "due"] as Field[]) if (f in values) l = setLineField(l, f, values[f] ?? null);
+		return l;
+	});
+}
+
+/** ✏️ dialog: estimate, start date and due date (the only fields Task Hours edits) */
+export class EditTaskModal extends Modal {
+	private estimate: string;
+	private start: string;
+	private due: string;
+
+	constructor(
+		app: App,
+		private task: Task
+	) {
+		super(app);
+		this.estimate = task.minutes === null ? "" : (estimateText(task.raw) ?? "");
+		this.start = task.startDate ?? "";
+		this.due = task.due ?? "";
+	}
+
+	onOpen() {
+		const { contentEl } = this;
+		this.setTitle(tr("edit.title"));
+		contentEl.createDiv({ cls: "task-hours-edit-name", text: this.task.name });
+		new Setting(contentEl)
+			.setName(tr("add.estimate"))
+			.setDesc(tr("add.estimateDesc"))
+			.addText((t) => {
+				t.setPlaceholder(tr("add.estimatePh")).setValue(this.estimate).onChange((v) => (this.estimate = v));
+				window.setTimeout(() => t.inputEl.focus(), 0);
+			});
+		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
+			t.inputEl.type = "date";
+			t.setValue(this.start).onChange((v) => (this.start = v));
+		});
+		new Setting(contentEl).setName(tr("add.due")).addText((t) => {
+			t.inputEl.type = "date";
+			t.setValue(this.due).onChange((v) => (this.due = v));
+		});
+		new Setting(contentEl)
+			.addButton((b) => b.setButtonText(tr("edit.cancel")).onClick(() => this.close()))
+			.addButton((b) =>
+				b
+					.setButtonText(tr("edit.save"))
+					.setCta()
+					.onClick(() => void this.save())
+			);
+		contentEl.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" && !e.isComposing && (e.target as HTMLElement).tagName === "INPUT") {
+				e.preventDefault();
+				void this.save();
+			}
+		});
+	}
+
+	private async save() {
+		const est = this.estimate.trim();
+		if (est && parseDuration(est) === null) {
+			new Notice(tr("add.badEstimate"));
+			return;
+		}
+		if (this.start && this.due && this.start > this.due) {
+			new Notice(tr("add.startAfterDue"));
+			return;
+		}
+		await setFields(this.app, this.task, { estimate: est || null, start: this.start || null, due: this.due || null });
+		this.close();
+	}
+
+	onClose() {
+		this.contentEl.empty();
+	}
 }
 
 export function toggleDone(app: App, t: Task) {
@@ -165,6 +244,10 @@ export interface ListOptions {
 	group: GroupBy;
 	showFile: boolean;
 	limit?: number;
+	/** Tasks-style query results: show the Tasks fields, 🛫 as written (not ⏳), and honour hide / show */
+	tasksMode?: boolean;
+	hide?: Set<string>;
+	show?: Set<string>;
 }
 
 export function renderTaskList(app: App, el: HTMLElement, tasks: Task[], opt: ListOptions) {
@@ -202,8 +285,36 @@ export function renderTaskList(app: App, el: HTMLElement, tasks: Task[], opt: Li
 	}
 }
 
+/** Results of a Tasks-style query: nested group headings, each with its estimate subtotal */
+export function renderQueryGroups(app: App, el: HTMLElement, groups: TGroup[], opt: ListOptions) {
+	const sums = new Map<string, { min: number; n: number }>();
+	for (const g of groups)
+		for (let i = 1; i <= g.headings.length; i++) {
+			const k = g.headings.slice(0, i).join("\u0001");
+			const s = sums.get(k) ?? { min: 0, n: 0 };
+			s.min += totalMinutes(g.tasks);
+			s.n += g.tasks.length;
+			sums.set(k, s);
+		}
+	let prev: string[] = [];
+	for (const g of groups) {
+		g.headings.forEach((h, i) => {
+			if (prev.slice(0, i + 1).join("\u0001") === g.headings.slice(0, i + 1).join("\u0001")) return;
+			const s = sums.get(g.headings.slice(0, i + 1).join("\u0001"))!;
+			const head = el.createDiv({ cls: `task-hours-group task-hours-group-l${Math.min(i + 1, 3)}` });
+			head.createSpan({ text: h });
+			const count = opt.show?.has("group count") ? tr("group.total", { dur: formatDuration(s.min), n: s.n }) : formatDuration(s.min);
+			head.createSpan({ cls: "task-hours-group-total", text: count });
+		});
+		prev = g.headings;
+		renderItems(app, el, g.tasks, opt);
+	}
+}
+
 function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOptions) {
 	const today = fmt(new Date());
+	const hide = opt.hide ?? new Set<string>();
+	const tm = !!opt.tasksMode;
 	const ul = parent.createEl("ul", { cls: "task-hours-list" });
 	for (const t of tasks) {
 		const li = ul.createEl("li", { cls: "task-hours-item" });
@@ -220,17 +331,42 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 			void openTask(app, t);
 		});
 		const meta = li.createSpan({ cls: "task-hours-fields" });
-		estimateChip(meta, t, (v) => void setField(app, t, "estimate", v));
-		dateChip(meta, "🛫", t.start, "task-hours-start", (v) => void setField(app, t, "start", v));
-		dateChip(
-			meta,
-			"📅",
-			t.due,
-			"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
-			(v) => void setField(app, t, "due", v)
-		);
-		if (opt.showFile) {
-			meta.createSpan({ cls: "task-hours-file", text: t.path.replace(/\.md$/, "").split("/").pop() ?? "" });
+		const ro = (icon: string, text: string | null, key: string) => {
+			if (text && !hide.has(key)) meta.createSpan({ cls: "task-hours-ro", text: `${icon} ${text}` });
+		};
+		if (tm && t.priority !== "none" && !hide.has("priority")) meta.createSpan({ cls: "task-hours-ro", text: PRIORITY_EMOJI[t.priority] });
+		if (tm) ro("🔁", t.recurrence, "recurrence rule");
+		if (!hide.has("estimate")) estimateChip(meta, t, (v) => void setField(app, t, "estimate", v));
+		if (tm) ro("➕", t.created && labelDate(t.created), "created date");
+		if (!hide.has("start date")) dateChip(meta, "🛫", tm ? t.startDate : t.start, "task-hours-start", (v) => void setField(app, t, "start", v));
+		if (tm) ro("⏳", t.scheduled && labelDate(t.scheduled), "scheduled date");
+		if (!hide.has("due date"))
+			dateChip(
+				meta,
+				"📅",
+				t.due,
+				"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
+				(v) => void setField(app, t, "due", v)
+			);
+		if (tm) ro("❌", t.cancelled && labelDate(t.cancelled), "cancelled date");
+		if (tm) ro("✅", t.doneDate && labelDate(t.doneDate), "done date");
+		if (tm) ro("🏁", t.onCompletion, "on completion");
+		if (tm) ro("🆔", t.id, "id");
+		if (tm) ro("⛔", t.dependsOn.join(","), "depends on");
+		if (tm && opt.show?.has("urgency")) meta.createSpan({ cls: "task-hours-ro", text: `⚡ ${urgency(t, new Date()).toFixed(2)}` });
+		if (opt.showFile && !hide.has("backlink")) {
+			const file = filenameOf(t.path).replace(/\.md$/, "");
+			meta.createSpan({ cls: "task-hours-file", text: tm && t.heading ? `${file} > ${t.heading}` : file });
+		}
+		if (!hide.has("edit button")) {
+			const pen = meta.createSpan({ cls: "task-hours-edit clickable-icon", attr: { "aria-label": tr("edit.title"), tabindex: "0" } });
+			setIcon(pen, "pencil");
+			const open = (e: Event) => {
+				stop(e);
+				new EditTaskModal(app, t).open();
+			};
+			pen.addEventListener("click", open);
+			pen.addEventListener("keydown", (e) => e.key === "Enter" && open(e));
 		}
 	}
 }
