@@ -100,7 +100,11 @@ group by folder
 ```
 ````
 
-Tasks と同じく保管庫全体が対象です。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
+Tasks と同じく保管庫全体が対象です。中身が空のブロックは、空の `tasks` ブロックと同じく全タスクを表示します。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
+
+### 入力候補
+
+命令を覚えていなくても大丈夫です。`task-hours` ブロック（`tasks` ブロックでも）の中で打ち始めると、次に書ける言葉が説明付きで候補に出ます。例：`gr` → **group by** → **folder**、`due` → **before** → **next week**。`tasks` ブロックでは Tasks の命令だけ、`task-hours` ブロックでは見積の命令（**Task Hours** の印付き）も出ます。設定の「クエリの命令を候補に出す」でオフにできます。
 
 使える命令：
 

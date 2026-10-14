@@ -786,6 +786,7 @@ export function runTQuery(q: TQuery, all: Task[], now: Date, formatMinutes: (m: 
 /** Old Task Hours syntax ("start: this week") — kept working alongside the Tasks syntax */
 export function isLegacyQuery(source: string): boolean {
 	const lines = source.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
-	if (!lines.length) return true;
+	// An empty block is a Tasks query too (all tasks in the vault), as in a tasks block
+	if (!lines.length) return false;
 	return lines.every((l) => /^(scope|範囲|folder|フォルダ|status|状態|start|開始|due|納期|group|グループ|sort|並び順|show|表示|limit)\s*:/i.test(l));
 }

@@ -97,7 +97,11 @@ group by folder
 ```
 ````
 
-It searches the whole vault, like Tasks. The block name works in any case: `task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`. (A space, as in `Task Hours`, isn't possible — Markdown only reads the first word as the block name.)
+It searches the whole vault, like Tasks — an empty block lists every task, just as an empty `tasks` block does. The block name works in any case: `task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`. (A space, as in `Task Hours`, isn't possible — Markdown only reads the first word as the block name.)
+
+### Suggestions while you type
+
+You don't need to remember the instructions. Inside a `task-hours` block — and inside `tasks` blocks too — start typing and the next possible words are suggested, each with a short explanation: `gr` → **group by** → **folder**, `due` → **before** → **next week**. In a `tasks` block only Tasks' own instructions are offered; a `task-hours` block also offers the estimate ones (marked **Task Hours**). Turn this off with **Suggest query instructions** in settings.
 
 Supported instructions:
 

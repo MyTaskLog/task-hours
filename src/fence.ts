@@ -23,6 +23,24 @@ function closes(line: string, open: Fence): boolean {
 	return !!m && m[2][0] === open.char && m[2].length >= open.len && !m[3].trim();
 }
 
+/** Which query block line `ln` is inside: "tasks", "task-hours", or null (outside, or another kind of block) */
+export function blockKindAt(lines: string[], ln: number): "tasks" | "task-hours" | null {
+	let open: (Fence & { info: string }) | null = null;
+	for (let i = 0; i < ln; i++) {
+		const line = lines[i];
+		if (open) {
+			if (closes(line, open)) open = null;
+			continue;
+		}
+		const m = line.match(FENCE);
+		if (m && !(m[2][0] === "`" && m[3].includes("`")))
+			open = { char: m[2][0], len: m[2].length, info: m[3].trim().split(/\s+/)[0].toLowerCase() };
+	}
+	if (!open) return null;
+	const name = open.info.replace(/[-_]/g, "");
+	return name === "tasks" ? "tasks" : name === "taskhours" ? "task-hours" : null;
+}
+
 /**
  * Look at the code blocks around line `ln`.
  * opener: the fence on `ln` starts a block (it is not the end of one above).

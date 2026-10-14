@@ -136,3 +136,24 @@
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 }
+
+/* Query instruction suggestions */
+.task-hours-qsug-main {
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}
+.task-hours-qsug-text {
+	font-family: var(--font-monospace);
+}
+.task-hours-qsug-badge {
+	font-size: var(--font-ui-smaller);
+	padding: 0 0.4em;
+	border-radius: var(--radius-s);
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+}
+.task-hours-qsug-desc {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
