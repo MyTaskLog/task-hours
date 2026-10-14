@@ -19,7 +19,7 @@ import { DASHBOARD_VIEW, DashboardView, RANGE_DAYS, RangeDays } from "./dashboar
 import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
 import { EstimatePicker } from "./estimate";
 import { Lang, setLang, t as tr } from "./i18n";
-import { Query, buildTaskLine, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
+import { PlainUnit, Query, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
 import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
 import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList, setUiApp } from "./ui";
@@ -33,6 +33,7 @@ export interface TaskHoursSettings extends ShorthandOptions {
 	dashboardFolder: string | null; // null = not chosen yet, "" = entire vault
 	dashboardDays: RangeDays; // length of the "next N days" tile
 	language: "auto" | Lang;
+	plainUnit: PlainUnit; // a plain number after ⏱️ in a note
 }
 
 const DEFAULT_SETTINGS: TaskHoursSettings = {
@@ -46,6 +47,7 @@ const DEFAULT_SETTINGS: TaskHoursSettings = {
 	dashboardFolder: null,
 	dashboardDays: 14,
 	language: "auto",
+	plainUnit: "h",
 };
 
 
@@ -56,6 +58,7 @@ export default class TaskHoursPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 		setUiApp(this.app);
+		setPlainUnit(this.settings.plainUnit);
 		const l = this.settings.language;
 		setLang(l === "auto" ? (getLanguage().startsWith("ja") ? "ja" : "en") : l);
 
@@ -131,6 +134,7 @@ export default class TaskHoursPlugin extends Plugin {
 	}
 	async saveSettings() {
 		await this.saveData(this.settings);
+		setPlainUnit(this.settings.plainUnit);
 	}
 }
 
@@ -246,6 +250,7 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		this.registerEvent(this.app.metadataCache.on("changed", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("rename", () => this.refresh()));
+		this.register(onPlainUnitChange(() => this.refresh()));
 		this.registerInterval(window.setInterval(() => this.refresh(), 10 * 60 * 1000));
 	}
 
@@ -350,7 +355,8 @@ type SettingKey =
 	| "estimateChar"
 	| "bareEstimate"
 	| "dayFirst"
-	| "language";
+	| "language"
+	| "plainUnit";
 
 class TaskHoursSettingTab extends PluginSettingTab {
 	constructor(
@@ -379,6 +385,15 @@ class TaskHoursSettingTab extends PluginSettingTab {
 			},
 			{ name: tr("set.bare"), desc: tr("set.bareDesc"), control: { type: "toggle", key: "bareEstimate" } },
 			{ name: tr("set.dayFirst"), desc: tr("set.dayFirstDesc"), control: { type: "toggle", key: "dayFirst" } },
+			{
+				name: tr("set.plainUnit"),
+				desc: tr("set.plainUnitDesc"),
+				control: {
+					type: "dropdown",
+					key: "plainUnit",
+					options: { h: tr("set.plainH"), m: tr("set.plainM"), auto: tr("set.plainAuto") },
+				},
+			},
 			{
 				name: tr("set.language"),
 				desc: tr("set.languageDesc"),
@@ -440,6 +455,20 @@ class TaskHoursSettingTab extends PluginSettingTab {
 		symbol(tr("set.estimateChar"), tr("set.estimateCharDesc"), "estimateChar");
 		toggle(tr("set.bare"), tr("set.bareDesc"), "bareEstimate");
 		toggle(tr("set.dayFirst"), tr("set.dayFirstDesc"), "dayFirst");
+		new Setting(containerEl)
+			.setName(tr("set.plainUnit"))
+			.setDesc(tr("set.plainUnitDesc"))
+			.addDropdown((d) =>
+				d
+					.addOption("h", tr("set.plainH"))
+					.addOption("m", tr("set.plainM"))
+					.addOption("auto", tr("set.plainAuto"))
+					.setValue(s.plainUnit)
+					.onChange((v) => {
+						s.plainUnit = v as PlainUnit;
+						save();
+					})
+			);
 		new Setting(containerEl)
 			.setName(tr("set.language"))
 			.setDesc(tr("set.languageDesc"))

@@ -146,7 +146,7 @@ show: summary
 
 - `[x]`, `[X]` and `[-]` (cancelled) count as done. `[/]` and other statuses count as open.
 - The start date is 🛫. If a task has no 🛫 but has ⏳ (Tasks' scheduled date), that is used instead.
-- Estimate units: `h` `hr` `hrs` `hour(s)` `m` `min` `mins` `minute(s)`, also `時間` `分`. A bare number written directly after ⏱️ in a note means hours; in the estimate editor you choose h or min.
+- Estimate units: `h` `hr` `hrs` `hour(s)` `m` `min` `mins` `minute(s)`, also `時間` `分`. A plain number typed directly after ⏱️ in a note (`⏱️ 50`) means hours by default; change this in settings under **Plain number after ⏱️** to minutes, or to *Auto* (10 or more = minutes, as with `+`). In the estimate editor you choose h or min.
 - When used with Tasks, ⏱️ must come before 🛫 and 📅. Quick entry, the form, and list edits all place it there for you.
 - The interface follows Obsidian's language (English or Japanese). You can override it in settings.
 

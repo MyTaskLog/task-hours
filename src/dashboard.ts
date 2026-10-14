@@ -3,7 +3,7 @@
 import { AbstractInputSuggest, App, ItemView, TFolder, WorkspaceLeaf, debounce } from "obsidian";
 import type TaskHoursPlugin from "./main";
 import { t as tr } from "./i18n";
-import { Task, fmt, formatDuration, parseTasks, totalMinutes } from "./parse";
+import { Task, fmt, formatDuration, onPlainUnitChange, parseTasks, totalMinutes } from "./parse";
 import { GroupBy, collectTasks, filesInFolder, renderTaskList } from "./ui";
 
 export const DASHBOARD_VIEW = "task-hours-dashboard";
@@ -103,6 +103,7 @@ export class DashboardView extends ItemView {
 		this.registerEvent(this.app.metadataCache.on("changed", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("delete", () => this.refresh()));
 		this.registerEvent(this.app.vault.on("rename", () => this.refresh()));
+		this.register(onPlainUnitChange(() => this.refresh()));
 		this.registerInterval(window.setInterval(() => this.refresh(), 10 * 60 * 1000));
 		await this.renderBody();
 	}

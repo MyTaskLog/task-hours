@@ -84,6 +84,32 @@ export function estimateText(line: string): string | null {
 export const DONE_STATUSES = ["x", "X", "-"];
 
 /** "2h" "1.5h" "90m" "1h30m" "2時間" "30分" "1時間30分" "2" (= hours) → minutes */
+export type PlainUnit = "h" | "m" | "auto";
+let plainUnit: PlainUnit = "h";
+/** What a plain number written after ⏱️ in a note means (setting) */
+export function setPlainUnit(u: PlainUnit) {
+	if (u === plainUnit) return;
+	plainUnit = u;
+	for (const fn of plainUnitListeners) fn();
+}
+const plainUnitListeners = new Set<() => void>();
+/** Re-render when the setting changes; returns a function that stops listening */
+export function onPlainUnitChange(fn: () => void): () => void {
+	plainUnitListeners.add(fn);
+	return () => plainUnitListeners.delete(fn);
+}
+
+/** The value after ⏱️: like parseDuration, but a plain number follows the setting */
+export function parseEstimateField(text: string): number | null {
+	const s = text.trim();
+	if (/^\d+(?:\.\d+)?$/.test(s)) {
+		const n = parseFloat(s);
+		const asMin = plainUnit === "m" || (plainUnit === "auto" && n >= 10 && !s.includes("."));
+		return Math.round(asMin ? n : n * 60);
+	}
+	return parseDuration(s);
+}
+
 export function parseDuration(text: string): number | null {
 	const s = text.trim();
 	if (!s) return null;
@@ -144,7 +170,7 @@ export function parseTaskLine(raw: string, path: string, line: number, heading: 
 		statusType: statusTypeOf(status),
 		done: DONE_STATUSES.includes(status),
 		name: name || tr("untitled"),
-		minutes: est ? parseDuration(est[1]) : null,
+		minutes: est ? parseEstimateField(est[1]) : null,
 		start: startDate ?? scheduled,
 		due: get(DUE_RE),
 		startDate,
