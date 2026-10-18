@@ -166,3 +166,5 @@
   font-size: 1em; font-weight: 600; color: var(--text-accent);
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
+/* Subtotal right next to the heading text instead of at the far right */
+.task-hours-query .task-hours-group { justify-content: flex-start; gap: 12px; }
