@@ -5,6 +5,7 @@
 - New: typing ```` ``` ```` then `t` suggests **tasks** and **task-hours** as the block name; choosing one also adds the closing fence and puts the cursor inside.
 - New setting **Suggest code block names** to turn this off.
 - New: suggestions while writing a query, in `task-hours` and `tasks` blocks — the next possible words, with a short explanation (`gr` → `group by` → `folder`). Estimate instructions are offered only in `task-hours` blocks. Setting: **Suggest query instructions**.
+- Group headings and their estimate subtotals in query results are larger and easier to read.
 - Changed: an empty `task-hours` block now lists every task in the vault, the same as an empty `tasks` block, without an estimate total.
 
 ## 1.1.0

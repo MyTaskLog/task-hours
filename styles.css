@@ -157,3 +157,12 @@
 	font-size: var(--font-ui-smaller);
 	color: var(--text-muted);
 }
+
+/* Group headings in query results: readable size like Tasks' headings, subtotal as large as the heading */
+.task-hours-query .task-hours-group { font-size: 1.15em; align-items: baseline; margin-top: 14px; }
+.task-hours-query .task-hours-group-l2 { font-size: 1.05em; }
+.task-hours-query .task-hours-group-l3 { font-size: 1em; }
+.task-hours-query .task-hours-group-total {
+  font-size: 1em; font-weight: 600; color: var(--text-accent);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
