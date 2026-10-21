@@ -10,6 +10,8 @@ It uses the same format as the [Tasks](https://github.com/obsidian-tasks-group/o
 
 Tasks is not required, but the two work well together.
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png" alt="Tasks with estimates, and the dashboard totalling them by start date">
+
 [日本語の説明はこちら](README.ja.md)
 
 ## Quick entry
@@ -25,6 +27,8 @@ becomes
 ```markdown
 - [ ] Lunch with Sam ⏱️ 2h 🛫 2026-10-06 📅 2026-10-09
 ```
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif" alt="Typing + @ ! in a task line and picking from the suggestions" width="800">
 
 | Type | Means |
 |---|---|
@@ -69,6 +73,8 @@ There's also a form for adding tasks (task name, estimate, start, due), availabl
 
 Click the timer icon in the ribbon to open the dashboard in the right sidebar.
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif" alt="Choosing a folder, switching tiles, and editing an estimate and a date from the dashboard" width="900">
+
 1. Choose a folder at the top. Pick **/ (entire vault)** to include every note.
 2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 14 days · No start date**.
 3. Click a tile to list its tasks. The *next days* tile is grouped by day with subtotals, and a **7 / 14 / 30 days** switch above the list changes its range (remembered for next time).
@@ -81,6 +87,9 @@ The folder is remembered, so next time it's one click.
 
 - Click **🛫 start** or **📅 due** to pick a new date. The task line in the note is updated.
 - Click **⏱️** to change the estimate: type a number, choose **h** or **min** (a number of 10 or more is assumed to be minutes, as with `+`), or click one of the quick picks.
+
+  <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png" alt="The estimate editor: a number, an h / min switch, a preview and quick picks" width="500">
+
 - Use the checkbox to complete or reopen a task.
 - Click a task name to jump to it in its note.
 
@@ -97,11 +106,15 @@ group by folder
 ```
 ````
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png" alt="Query results grouped by start date, with estimate subtotals next to each heading" width="800">
+
 It searches the whole vault, like Tasks — an empty block lists every task, just as an empty `tasks` block does. The block name works in any case: `task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`. (A space, as in `Task Hours`, isn't possible — Markdown only reads the first word as the block name.)
 
 ### Suggestions while you type
 
 You don't need to remember the instructions. Inside a `task-hours` block — and inside `tasks` blocks too — start typing and the next possible words are suggested, each with a short explanation: `gr` → **group by** → **folder**, `due` → **before** → **next week**. In a `tasks` block only Tasks' own instructions are offered; a `task-hours` block also offers the estimate ones (marked **Task Hours**). Turn this off with **Suggest query instructions** in settings.
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif" alt="Writing a task-hours query with suggestions" width="860">
 
 Supported instructions:
 
@@ -127,7 +140,10 @@ Not supported: `filter by function`, `sort by function`, `group by function` (cu
 
 Each task is shown like in Tasks: the description, its fields, and a link to the note it's in — `(note > heading)` — that jumps to the task.
 
-Everything shown can be changed right there: click ⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ to pick a new date (or estimate), click the priority to choose another, click 🔁 to edit the recurrence rule. The ✏️ pencil opens all of them at once. Task Hours can **add** only the estimate, start date and due date; the other fields can be changed or removed when the task already has them (add them with Tasks).
+Everything shown can be changed right there: click ⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ to pick a new date (or estimate), click the priority to choose another, click 🔁 to edit the recurrence rule. The ✏️ pencil opens all of them at once.
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif" alt="Completing tasks and changing dates in query results; totals update straight away" width="900">
+ Task Hours can **add** only the estimate, start date and due date; the other fields can be changed or removed when the task already has them (add them with Tasks).
 
 ### Older syntax
 

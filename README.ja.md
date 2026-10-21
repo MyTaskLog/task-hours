@@ -10,6 +10,8 @@
 
 Tasks プラグインがなくても使えますが、一緒に使うとより便利です。
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png" alt="見積付きのタスクと、開始日ごとに合計するダッシュボード">
+
 [English](README.md)
 
 ## 簡易入力
@@ -25,6 +27,8 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 ```markdown
 - [ ] 昼食 ⏱️ 2h 🛫 2026-10-06 📅 2026-10-09
 ```
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif" alt="タスク行で + @ ! を打って候補から選ぶ様子" width="800">
 
 | 書き方 | 意味 |
 |---|---|
@@ -72,6 +76,8 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 左リボンのタイマーアイコンを押すと、右サイドバーに開きます。
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif" alt="フォルダを選び、枠を切り替え、見積と日付をその場で変更する様子" width="900">
+
 1. 上の欄で集計するフォルダを選びます。`/（保管庫全体）` を選ぶと全ノートが対象になります。
 2. 「繰越・今日・明日・14日間・開始日なし」ごとに、未完了タスクの合計時間と件数が出ます。
 3. 枠をクリックすると、その期間のタスク一覧に切り替わります。「○日間」の枠は日付ごとの小計つきで、一覧の上の **7日 / 14日 / 30日** ボタンで期間を切り替えられます（次回も記憶されます）。
@@ -84,6 +90,9 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 - **🛫 開始日・📅 納期** をクリックしてカレンダーで日付を変えると、元のノートの行が書き換わります。
 - **⏱️ 見積** をクリックすると見積の入力画面が開きます。数字を入れて **h**（時間）か **min**（分）を選ぶか、よく使う時間のボタンを押します（`+` と同じく、10以上の数字は自動で min になります）。
+
+  <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png" alt="見積の入力画面：数字、h / min の切り替え、プレビュー、よく使う時間" width="500">
+
 - チェックボックスで完了／未完了を切り替えられます。
 - タスク名をクリックすると、元のノートの該当行へ移動します。
 
@@ -100,11 +109,15 @@ group by folder
 ```
 ````
 
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png" alt="開始日ごとのグループと、見出し横の見積小計" width="800">
+
 Tasks と同じく保管庫全体が対象です。中身が空のブロックは、空の `tasks` ブロックと同じく全タスクを表示します。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
 
 ### 入力候補
 
 命令を覚えていなくても大丈夫です。`task-hours` ブロック（`tasks` ブロックでも）の中で打ち始めると、次に書ける言葉が説明付きで候補に出ます。例：`gr` → **group by** → **folder**、`due` → **before** → **next week**。`tasks` ブロックでは Tasks の命令だけ、`task-hours` ブロックでは見積の命令（**Task Hours** の印付き）も出ます。設定の「クエリの命令を候補に出す」でオフにできます。
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif" alt="入力候補を使って task-hours のクエリを書く様子" width="860">
 
 使える命令：
 
@@ -130,7 +143,10 @@ Tasks と同じく保管庫全体が対象です。中身が空のブロック�
 
 一覧の見た目は Tasks と同じで、タスク名・各項目のあとに `(ノート名 > 見出し)` のリンクが付きます。押すとそのタスクの行に移動します。
 
-表示されている項目はその場で変更できます。⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ をクリックすると日付（見積）を変更でき、優先度をクリックすると別の優先度を選べ、🔁 をクリックすると繰り返しのルールを書き換えられます。✏️（鉛筆）を押すと、まとめて編集する画面が開きます。Task Hours が**新しく追加できるのは見積・開始日・納期だけ**です。そのほかの項目は、タスクにすでに書かれている場合だけ変更・削除できます（追加は Tasks で行ってください）。
+表示されている項目はその場で変更できます。⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ をクリックすると日付（見積）を変更でき、優先度をクリックすると別の優先度を選べ、🔁 をクリックすると繰り返しのルールを書き換えられます。✏️（鉛筆）を押すと、まとめて編集する画面が開きます。
+
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif" alt="一覧でタスクを完了・日付を変更すると、合計がすぐ変わる様子" width="900">
+Task Hours が**新しく追加できるのは見積・開始日・納期だけ**です。そのほかの項目は、タスクにすでに書かれている場合だけ変更・削除できます（追加は Tasks で行ってください）。
 
 ### 以前の書き方
 
