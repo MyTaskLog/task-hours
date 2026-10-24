@@ -179,25 +179,36 @@
 .task-hours-query .task-hours-group { justify-content: flex-start; gap: 12px; }
 
 /* ---- Larger dialogs (✏️ edit, ⏱️ estimate, dates) ----
-   Obsidian sizes dialog text with fixed --font-ui-* values, so they are raised here */
+   Every text in these dialogs uses one size, the same as the estimate input.
+   Obsidian sizes dialog text with fixed --font-ui-* values, so they are raised here too. */
 .task-hours-modal {
-  width: min(720px, 96vw);
-  --font-ui-smaller: 16px; --font-ui-small: 18px; --font-ui-medium: 20px; --font-ui-large: 24px;
-  --input-height: 44px;
-  font-size: 20px;
+  --th-dialog-font: 26px;
+  width: min(900px, 96vw);
+  --font-ui-smaller: var(--th-dialog-font); --font-ui-small: var(--th-dialog-font);
+  --font-ui-medium: var(--th-dialog-font); --font-ui-large: var(--th-dialog-font);
+  --input-height: 52px;
+  font-size: var(--th-dialog-font);
 }
-.task-hours-modal .modal-title { font-size: 26px; }
-.task-hours-modal .task-hours-edit-name { font-size: 20px; color: var(--text-normal); margin-bottom: 12px; }
-.task-hours-modal .setting-item { padding: 14px 0; }
-.task-hours-modal .setting-item-name { font-size: 20px; }
-.task-hours-modal button, .task-hours-modal input, .task-hours-modal select { font-size: 18px; height: auto; padding: 8px 16px; }
-.task-hours-modal .task-hours-estpicker { gap: 12px; }
-.task-hours-modal .task-hours-estpicker-row { gap: 12px; }
-.task-hours-modal .task-hours-estpicker-input { font-size: 26px; width: 5em; padding: 6px 12px; }
-.task-hours-modal .task-hours-estpicker-unit { font-size: 20px; padding: 8px 18px; }
-.task-hours-modal .task-hours-estpicker-preview { font-size: 22px; }
-.task-hours-modal .task-hours-estpicker-quick { gap: 8px; }
-.task-hours-modal .task-hours-estpicker-chip { font-size: 18px; padding: 8px 14px; }
+.task-hours-modal .modal-title,
+.task-hours-modal .task-hours-edit-name,
+.task-hours-modal .setting-item-name,
+.task-hours-modal button,
+.task-hours-modal input,
+.task-hours-modal select,
+.task-hours-modal .task-hours-estpicker-preview,
+.task-hours-modal .task-hours-estpicker-unit,
+.task-hours-modal .task-hours-estpicker-chip,
+.task-hours-modal .task-hours-cal-title,
+.task-hours-modal .task-hours-cal-wd,
+.task-hours-modal .task-hours-cal button.task-hours-cal-day,
+.task-hours-modal .task-hours-cal button.task-hours-cal-nav { font-size: var(--th-dialog-font); }
+.task-hours-modal .task-hours-edit-name { color: var(--text-normal); margin-bottom: 12px; }
+.task-hours-modal .setting-item { padding: 16px 0; }
+.task-hours-modal button, .task-hours-modal input, .task-hours-modal select { height: auto; padding: 8px 18px; }
+.task-hours-modal .task-hours-estpicker { gap: 14px; }
+.task-hours-modal .task-hours-estpicker-row { gap: 14px; }
+.task-hours-modal .task-hours-estpicker-input { width: 5em; padding: 6px 12px; }
+.task-hours-modal .task-hours-estpicker-quick { gap: 10px; }
 
 /* Date field in forms */
 .task-hours-datefield { display: flex; align-items: center; gap: 4px; }
@@ -207,7 +218,7 @@
 .task-hours-datefield-clear:hover { color: var(--text-error); }
 
 /* Calendar */
-.task-hours-datemodal { width: min(600px, 96vw); }
+.task-hours-datemodal { width: min(720px, 96vw); }
 .task-hours-cal { user-select: none; }
 .task-hours-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .task-hours-cal-title { font-size: 24px; font-weight: 600; }
