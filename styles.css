@@ -38,8 +38,17 @@
 
 /* ---- ダッシュボード ---- */
 .task-hours-dashboard { padding: 10px 12px; }
-.task-hours-folder { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
-.task-hours-folder-input { flex: 1; min-width: 0; }
+.task-hours-folders { margin-bottom: 10px; }
+.task-hours-folder { display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; }
+.task-hours-folder-icon { line-height: var(--input-height); }
+.task-hours-chips { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px; }
+.task-hours-folder-input { flex: 1; min-width: 8em; }
+.task-hours-fchip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 4px 1px 8px; border-radius: var(--radius-s); background: var(--background-modifier-hover); font-size: var(--font-ui-small); }
+.task-hours-folder.is-exclude .task-hours-fchip { text-decoration: line-through; color: var(--text-muted); }
+.task-hours-fchip.is-missing { color: var(--text-error); }
+.task-hours-fchip-x { cursor: pointer; color: var(--text-faint); padding: 0 2px; }
+.task-hours-fchip-x:hover { color: var(--text-error); }
+.task-hours-exclude-btn { font-size: var(--font-ui-smaller); height: auto; padding: 2px 8px; margin-left: 22px; color: var(--text-muted); background: transparent; box-shadow: none; }
 .task-hours-wait { line-height: 1.6; }
 .task-hours-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 6px; margin-bottom: 12px; }
 .task-hours-tile {

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0
+
+- Dashboard: total several folders at once, and leave folders out. Add folders as chips at the top (× removes one); **+ Leave out a folder** adds folders to skip, such as an archive inside a project. Your current folder is kept.
+- Queries: after `folder includes`, `path includes`, `filename includes` and `root includes` (and `does not include`), the vault's folders and files are suggested and narrowed as you type.
+
 ## 1.2.2
 
 - Fix: links in a task's text (`[[note]]`, `[[note|alias]]`, `[text](url)`, plain URLs) were shown as raw text in Task Hours lists. They are now links you can click (and hover to preview), as in Tasks; `#tags` are shown as tags.

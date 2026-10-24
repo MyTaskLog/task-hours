@@ -34,7 +34,8 @@ export interface TaskHoursSettings extends ShorthandOptions {
 	dateSuggest: boolean; // suggest dates after @ / !
 	blockSuggest: boolean; // suggest tasks / task-hours after ```
 	querySuggest: boolean; // suggest instructions inside tasks / task-hours blocks
-	dashboardFolder: string | null; // null = not chosen yet, "" = entire vault
+	dashboardFolders: string[]; // folders to total ("" = entire vault); empty = not chosen yet
+	dashboardExclude: string[]; // folders left out
 	dashboardDays: RangeDays; // length of the "next N days" tile
 	language: "auto" | Lang;
 	plainUnit: PlainUnit; // a plain number after ⏱️ in a note
@@ -50,7 +51,8 @@ const DEFAULT_SETTINGS: TaskHoursSettings = {
 	blockSuggest: true,
 	querySuggest: true,
 	dayFirst: false,
-	dashboardFolder: null,
+	dashboardFolders: [],
+	dashboardExclude: [],
 	dashboardDays: 14,
 	language: "auto",
 	plainUnit: "h",
@@ -136,8 +138,13 @@ export default class TaskHoursPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		const saved = (await this.loadData()) as Partial<TaskHoursSettings> | null;
+		const saved = (await this.loadData()) as (Partial<TaskHoursSettings> & { dashboardFolder?: string | null }) | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		// 1.2.x and earlier kept one folder
+		if (saved && !saved.dashboardFolders && typeof saved.dashboardFolder === "string") this.settings.dashboardFolders = [saved.dashboardFolder];
+		delete (this.settings as { dashboardFolder?: unknown }).dashboardFolder;
+		this.settings.dashboardFolders = [...this.settings.dashboardFolders];
+		this.settings.dashboardExclude = [...this.settings.dashboardExclude];
 		if (!RANGE_DAYS.includes(this.settings.dashboardDays)) this.settings.dashboardDays = DEFAULT_SETTINGS.dashboardDays;
 	}
 	async saveSettings() {

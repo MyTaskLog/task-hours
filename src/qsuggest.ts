@@ -3,7 +3,7 @@
 // In a tasks block only the Tasks plugin's own instructions are offered; a task-hours block
 // adds the estimate ones (has estimate, sort by estimate, show estimate total …).
 
-import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile } from "obsidian";
+import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile, TFolder } from "obsidian";
 import { blockKindAt } from "./fence";
 import { lang, t as tr } from "./i18n";
 import type TaskHoursPlugin from "./main";
@@ -12,8 +12,13 @@ import type TaskHoursPlugin from "./main";
 interface Node {
 	end?: boolean;
 	free?: boolean;
+	values?: ValueKind; // free text, with the vault's folders / files offered as suggestions
 	kids?: [string, Node][];
 }
+
+export type ValueKind = "folders" | "roots" | "files" | "paths";
+/** Gives the folder / file names to suggest (folders end with "/", as Tasks writes them) */
+export type ValueSource = (kind: ValueKind) => string[];
 
 export interface QItem {
 	text: string; // what is inserted
@@ -106,6 +111,14 @@ function grammar(th: boolean): Node {
 		...(dates.kids ?? []),
 	]);
 	const text = node(["includes", "does not include", "regex matches", "regex does not match"].map((o) => [o, FREE]));
+	// path / folder / filename / root: suggest what is in the vault after includes / does not include
+	const textOf = (values: ValueKind) =>
+		node([
+			["includes", { free: true, values }],
+			["does not include", { free: true, values }],
+			["regex matches", FREE],
+			["regex does not match", FREE],
+		]);
 	const levels: [string, Node][] = ["highest", "high", "medium", "none", "low", "lowest"].map((l) => [l, END]);
 	const rev = node([["reverse", END]], true);
 	const sortKeys = [
@@ -148,11 +161,11 @@ function grammar(th: boolean): Node {
 		["status.type", node(["is", "is not"].map((o) => [o, node(["TODO", "DONE", "IN_PROGRESS", "CANCELLED", "ON_HOLD", "NON_TASK"].map((v) => [v, END]))]))],
 		["status.name", text],
 		["description", text],
-		["path", text],
-		["folder", text],
-		["filename", text],
+		["path", textOf("paths")],
+		["folder", textOf("folders")],
+		["filename", textOf("files")],
 		["heading", text],
-		["root", text],
+		["root", textOf("roots")],
 		["has tags", END],
 		["no tags", END],
 		["tags include", FREE],
@@ -183,7 +196,7 @@ function grammar(th: boolean): Node {
  * Suggestions for what is typed on a query line (up to the cursor).
  * Returns where the replaced word starts (offset in `typed`) and the items, or null.
  */
-export function querySuggestions(typed: string, th: boolean): { from: number; items: QItem[] } | null {
+export function querySuggestions(typed: string, th: boolean, source?: ValueSource): { from: number; items: QItem[] } | null {
 	if (/^\s*#/.test(typed)) return null; // a comment line
 	// Inside a boolean combination, suggest for the part after the last "("
 	let base = typed.search(/\S/);
@@ -205,6 +218,19 @@ export function querySuggestions(typed: string, th: boolean): { from: number; it
 	const out: { from: number; items: QItem[] } = { from: typed.length, items: [] };
 	const seen = new Set<string>();
 	const walk = (n: Node, rest: string, at: number, depth: number) => {
+		if (n.values && source) {
+			// Narrow the vault's folders / files by what has been typed so far (anywhere in the name)
+			const q = rest.toLowerCase();
+			for (const v of source(n.values)) {
+				const low = v.toLowerCase();
+				if (!low.includes(q) || low === q || seen.has(v)) continue;
+				seen.add(v);
+				out.from = Math.min(out.from, at);
+				out.items.push({ text: v, from: at, desc: "", more: false, th: false });
+				if (out.items.length >= 50) break;
+			}
+			return;
+		}
 		for (const [tok, kid] of n.kids ?? []) {
 			const low = rest.toLowerCase();
 			const t = tok.toLowerCase();
@@ -229,6 +255,19 @@ export function querySuggestions(typed: string, th: boolean): { from: number; it
 	return out.items.length ? out : null;
 }
 
+function vaultValues(app: App, kind: ValueKind): string[] {
+	const folders = app.vault
+		.getAllLoadedFiles()
+		.filter((f): f is TFolder => f instanceof TFolder && !f.isRoot())
+		.map((f) => f.path + "/")
+		.sort((a, b) => a.localeCompare(b));
+	if (kind === "folders") return folders;
+	if (kind === "roots") return folders.filter((f) => f.indexOf("/") === f.length - 1);
+	const files = app.vault.getMarkdownFiles().sort((a, b) => a.path.localeCompare(b.path));
+	if (kind === "files") return [...new Set(files.map((f) => f.name))];
+	return [...folders, ...files.map((f) => f.path)];
+}
+
 export class QuerySuggest extends EditorSuggest<QItem> {
 	private items: QItem[] = [];
 
@@ -251,7 +290,7 @@ export class QuerySuggest extends EditorSuggest<QItem> {
 		if (!before.trim()) return null; // an empty line: Enter must still make a new line
 		const kind = blockKindAt(editor.getValue().split("\n"), cursor.line);
 		if (!kind) return null;
-		const r = querySuggestions(before, kind === "task-hours");
+		const r = querySuggestions(before, kind === "task-hours", (k) => vaultValues(this.app, k));
 		if (!r) return null;
 		this.items = r.items;
 		return { start: { line: cursor.line, ch: r.from }, end: cursor, query: before.slice(r.from) };

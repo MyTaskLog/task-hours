@@ -4,7 +4,7 @@ import { AbstractInputSuggest, App, ItemView, TFolder, WorkspaceLeaf, debounce }
 import type TaskHoursPlugin from "./main";
 import { t as tr } from "./i18n";
 import { Task, fmt, formatDuration, onPlainUnitChange, parseTasks, totalMinutes } from "./parse";
-import { GroupBy, collectTasks, filesInFolder, renderTaskList } from "./ui";
+import { GroupBy, collectTasks, renderTaskList } from "./ui";
 
 export const DASHBOARD_VIEW = "task-hours-dashboard";
 const rootLabel = () => tr("dash.root");
@@ -39,28 +39,38 @@ function inPeriod(t: Task, p: Period, today: string, days: number): boolean {
 }
 
 class FolderSuggest extends AbstractInputSuggest<string> {
-	constructor(app: App, inputEl: HTMLInputElement) {
+	constructor(
+		app: App,
+		inputEl: HTMLInputElement,
+		private withRoot: boolean,
+		private taken: () => string[]
+	) {
 		super(app, inputEl);
 	}
 	getSuggestions(query: string): string[] {
 		const q = query.toLowerCase().replace(/^\/+/, "");
+		const taken = new Set(this.taken());
 		const folders = this.app.vault
 			.getAllLoadedFiles()
-			.filter((f): f is TFolder => f instanceof TFolder && !f.isRoot())
+			.filter((f): f is TFolder => f instanceof TFolder && !f.isRoot() && !taken.has(f.path))
 			.map((f) => f.path)
 			.sort((a, b) => a.localeCompare(b));
 		const hits = folders.filter((p) => p.toLowerCase().includes(q));
-		return q && !rootLabel().toLowerCase().includes(q) ? hits : [rootLabel(), ...hits];
+		const root = this.withRoot && !taken.has("") && (!q || rootLabel().toLowerCase().includes(q));
+		return root ? [rootLabel(), ...hits] : hits;
 	}
 	renderSuggestion(value: string, el: HTMLElement) {
 		el.setText(value);
 	}
 }
 
+const under = (path: string, folder: string) => folder === "" || path.startsWith(folder + "/");
+
 export class DashboardView extends ItemView {
 	private period: Period = "today";
 	private bodyEl!: HTMLElement;
-	private input!: HTMLInputElement;
+	private barEl!: HTMLElement;
+	private showExclude = false;
 	private refresh = debounce(() => this.renderBody(), 400, true);
 
 	constructor(leaf: WorkspaceLeaf, private plugin: TaskHoursPlugin) {
@@ -81,23 +91,8 @@ export class DashboardView extends ItemView {
 		root.empty();
 		root.addClass("task-hours-dashboard");
 
-		const bar = root.createDiv({ cls: "task-hours-folder" });
-		bar.createSpan({ text: "📁", cls: "task-hours-folder-icon" });
-		this.input = bar.createEl("input", { type: "text", cls: "task-hours-folder-input" });
-		this.input.placeholder = tr("dash.pick");
-		const folder = this.plugin.settings.dashboardFolder;
-		this.input.value = folder === null ? "" : folder === "" ? rootLabel() : folder;
-		new FolderSuggest(this.app, this.input).onSelect((v, _e) => {
-			this.input.value = v;
-			this.input.blur();
-			void this.setFolder(v);
-		});
-		this.input.addEventListener("keydown", (e) => {
-			if (e.key === "Enter" && !e.isComposing) void this.commitTyped();
-		});
-		this.input.addEventListener("change", () => {
-			void this.commitTyped();
-		});
+		this.barEl = root.createDiv({ cls: "task-hours-folders" });
+		this.renderBar();
 
 		this.bodyEl = root.createDiv();
 		this.registerEvent(this.app.metadataCache.on("changed", () => this.refresh()));
@@ -108,36 +103,90 @@ export class DashboardView extends ItemView {
 		await this.renderBody();
 	}
 
-	private async commitTyped(): Promise<void> {
-		const v = this.input.value.trim();
-		if (v === "" || v === rootLabel() || v === "/") return this.setFolder(v === "" ? null : rootLabel());
-		const f = this.app.vault.getAbstractFileByPath(v.replace(/^\/+|\/+$/g, ""));
-		if (f instanceof TFolder) await this.setFolder(f.path);
+	/** Folders to total (📁) and folders to leave out (🚫), each as removable chips with an input to add more */
+	private renderBar() {
+		const el = this.barEl;
+		el.empty();
+		const st = this.plugin.settings;
+		this.renderFolderRow(el, "📁", st.dashboardFolders, true, tr(st.dashboardFolders.length ? "dash.addFolder" : "dash.pick"));
+		if (st.dashboardFolders.length) {
+			if (st.dashboardExclude.length || this.showExclude) this.renderFolderRow(el, "🚫", st.dashboardExclude, false, tr("dash.addExclude"));
+			else {
+				const b = el.createEl("button", { cls: "task-hours-exclude-btn", text: tr("dash.exclude") });
+				b.addEventListener("click", () => {
+					this.showExclude = true;
+					this.renderBar();
+					el.querySelector<HTMLInputElement>(".is-exclude input")?.focus();
+				});
+			}
+		}
 	}
 
-	private async setFolder(v: string | null) {
-		this.plugin.settings.dashboardFolder = v === null ? null : v === rootLabel() ? "" : v;
+	private renderFolderRow(parent: HTMLElement, icon: string, list: string[], include: boolean, placeholder: string) {
+		const row = parent.createDiv({ cls: "task-hours-folder" + (include ? "" : " is-exclude") });
+		row.createSpan({ text: icon, cls: "task-hours-folder-icon", attr: { "aria-label": tr(include ? "dash.included" : "dash.excluded") } });
+		const chips = row.createDiv({ cls: "task-hours-chips" });
+		for (const f of list) {
+			const missing = f !== "" && !(this.app.vault.getAbstractFileByPath(f) instanceof TFolder);
+			const chip = chips.createSpan({ cls: "task-hours-fchip" + (missing ? " is-missing" : ""), text: f === "" ? rootLabel() : f });
+			if (missing) chip.setAttr("aria-label", tr("dash.notFound", { folder: f }));
+			const x = chip.createSpan({ cls: "task-hours-fchip-x", text: "×", attr: { "aria-label": tr("dash.remove"), role: "button" } });
+			x.addEventListener("click", () => void this.updateList(include, list.filter((v) => v !== f)));
+		}
+		const input = chips.createEl("input", { type: "text", cls: "task-hours-folder-input" });
+		input.placeholder = placeholder;
+		const add = (v: string) => {
+			const value = v === rootLabel() || v === "/" ? "" : v.replace(/^\/+|\/+$/g, "");
+			if (value !== "" && !(this.app.vault.getAbstractFileByPath(value) instanceof TFolder)) return;
+			if (!include && value === "") return;
+			if (list.includes(value)) return;
+			void this.updateList(include, [...list, value]);
+		};
+		const sug = new FolderSuggest(this.app, input, include, () => list);
+		sug.onSelect((v, _e) => {
+			sug.close();
+			add(v);
+		});
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" && !e.isComposing && input.value.trim()) add(input.value.trim());
+		});
+	}
+
+	private async updateList(include: boolean, list: string[]) {
+		const st = this.plugin.settings;
+		if (include) st.dashboardFolders = list;
+		else st.dashboardExclude = list;
+		if (!st.dashboardExclude.length) this.showExclude = false;
 		await this.plugin.saveSettings();
+		this.renderBar();
 		await this.renderBody();
+	}
+
+	/** Markdown files in the chosen folders, minus the left-out ones */
+	private targetFiles() {
+		const st = this.plugin.settings;
+		const inc = st.dashboardFolders.filter((f) => f === "" || this.app.vault.getAbstractFileByPath(f) instanceof TFolder);
+		return this.app.vault
+			.getMarkdownFiles()
+			.filter((f) => inc.some((d) => under(f.path, d)) && !st.dashboardExclude.some((d) => under(f.path, d)));
 	}
 
 	async renderBody() {
 		const el = this.bodyEl;
 		if (!el) return;
-		const folder = this.plugin.settings.dashboardFolder;
+		const folders = this.plugin.settings.dashboardFolders;
 		el.empty();
-		if (folder === null) {
+		if (!folders.length) {
 			el.createDiv({ cls: "task-hours-empty task-hours-wait", text: tr("dash.wait") });
 			return;
 		}
-		if (folder !== "" && !(this.app.vault.getAbstractFileByPath(folder) instanceof TFolder)) {
-			el.createDiv({ cls: "task-hours-error", text: tr("dash.notFound", { folder }) });
-			return;
-		}
+		for (const folder of folders)
+			if (folder !== "" && !(this.app.vault.getAbstractFileByPath(folder) instanceof TFolder))
+				el.createDiv({ cls: "task-hours-error", text: tr("dash.notFound", { folder }) });
 
 		const today = fmt(new Date());
 		const days = this.plugin.settings.dashboardDays;
-		const open = (await collectTasks(this.app, filesInFolder(this.app, folder), parseTasks)).filter((t) => !t.done);
+		const open = (await collectTasks(this.app, this.targetFiles(), parseTasks)).filter((t) => !t.done);
 		const tiles = el.createDiv({ cls: "task-hours-tiles" });
 		for (const p of periods(days)) {
 			const ts = open.filter((t) => inPeriod(t, p.id, today, days));

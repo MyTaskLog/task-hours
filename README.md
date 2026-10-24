@@ -75,11 +75,11 @@ Click the timer icon in the ribbon to open the dashboard in the right sidebar.
 
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif" alt="Choosing a folder, switching tiles, and editing an estimate and a date from the dashboard" width="900">
 
-1. Choose a folder at the top. Pick **/ (entire vault)** to include every note.
+1. Choose a folder at the top. Pick **/ (entire vault)** to include every note. You can add more folders — each one shows as a chip, and × removes it. Use **+ Leave out a folder** to skip folders inside them (an archive, for example).
 2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 14 days · No start date**.
 3. Click a tile to list its tasks. The *next days* tile is grouped by day with subtotals, and a **7 / 14 / 30 days** switch above the list changes its range (remembered for next time).
 
-The folder is remembered, so next time it's one click.
+The folders are remembered, so next time it's one click.
 
 **Carry-over** shows tasks whose start date has passed but aren't done yet. Change their start date to bring them into today's total.
 
@@ -112,7 +112,7 @@ It searches the whole vault, like Tasks — an empty block lists every task, jus
 
 ### Suggestions while you type
 
-You don't need to remember the instructions. Inside a `task-hours` block — and inside `tasks` blocks too — start typing and the next possible words are suggested, each with a short explanation: `gr` → **group by** → **folder**, `due` → **before** → **next week**. In a `tasks` block only Tasks' own instructions are offered; a `task-hours` block also offers the estimate ones (marked **Task Hours**). Turn this off with **Suggest query instructions** in settings.
+You don't need to remember the instructions. Inside a `task-hours` block — and inside `tasks` blocks too — start typing and the next possible words are suggested, each with a short explanation: `gr` → **group by** → **folder**, `due` → **before** → **next week**. After `folder includes`, `path includes`, `filename includes` or `root includes`, your vault's folders and files are listed and narrowed as you type. In a `tasks` block only Tasks' own instructions are offered; a `task-hours` block also offers the estimate ones (marked **Task Hours**). Turn this off with **Suggest query instructions** in settings.
 
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif" alt="Writing a task-hours query with suggestions" width="860">
 
