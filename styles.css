@@ -178,15 +178,26 @@
 /* Subtotal right next to the heading text instead of at the far right */
 .task-hours-query .task-hours-group { justify-content: flex-start; gap: 12px; }
 
-/* ---- Larger dialogs (✏️ edit, ⏱️ estimate, dates) ---- */
-.task-hours-modal { width: min(600px, 95vw); font-size: 1.1em; }
-.task-hours-modal .modal-title { font-size: 1.3em; }
-.task-hours-modal .task-hours-edit-name { font-size: 1.05em; color: var(--text-normal); }
-.task-hours-modal .setting-item-name { font-size: 1.05em; }
-.task-hours-modal button, .task-hours-modal input, .task-hours-modal select { font-size: 1em; height: auto; padding: 6px 12px; }
-.task-hours-modal .task-hours-estpicker-input { font-size: 1.2em; width: 6em; }
-.task-hours-modal .task-hours-estpicker-chip { font-size: 0.95em; padding: 4px 10px; }
-.task-hours-modal .task-hours-estpicker-preview { font-size: 1.1em; }
+/* ---- Larger dialogs (✏️ edit, ⏱️ estimate, dates) ----
+   Obsidian sizes dialog text with fixed --font-ui-* values, so they are raised here */
+.task-hours-modal {
+  width: min(720px, 96vw);
+  --font-ui-smaller: 16px; --font-ui-small: 18px; --font-ui-medium: 20px; --font-ui-large: 24px;
+  --input-height: 44px;
+  font-size: 20px;
+}
+.task-hours-modal .modal-title { font-size: 26px; }
+.task-hours-modal .task-hours-edit-name { font-size: 20px; color: var(--text-normal); margin-bottom: 12px; }
+.task-hours-modal .setting-item { padding: 14px 0; }
+.task-hours-modal .setting-item-name { font-size: 20px; }
+.task-hours-modal button, .task-hours-modal input, .task-hours-modal select { font-size: 18px; height: auto; padding: 8px 16px; }
+.task-hours-modal .task-hours-estpicker { gap: 12px; }
+.task-hours-modal .task-hours-estpicker-row { gap: 12px; }
+.task-hours-modal .task-hours-estpicker-input { font-size: 26px; width: 5em; padding: 6px 12px; }
+.task-hours-modal .task-hours-estpicker-unit { font-size: 20px; padding: 8px 18px; }
+.task-hours-modal .task-hours-estpicker-preview { font-size: 22px; }
+.task-hours-modal .task-hours-estpicker-quick { gap: 8px; }
+.task-hours-modal .task-hours-estpicker-chip { font-size: 18px; padding: 8px 14px; }
 
 /* Date field in forms */
 .task-hours-datefield { display: flex; align-items: center; gap: 4px; }
@@ -196,18 +207,18 @@
 .task-hours-datefield-clear:hover { color: var(--text-error); }
 
 /* Calendar */
-.task-hours-datemodal { width: min(460px, 95vw); }
+.task-hours-datemodal { width: min(600px, 96vw); }
 .task-hours-cal { user-select: none; }
 .task-hours-cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.task-hours-cal-title { font-size: 1.2em; font-weight: 600; }
-.task-hours-cal button.task-hours-cal-nav { font-size: 1.4em; padding: 2px 14px; }
-.task-hours-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.task-hours-cal-wd { text-align: center; font-size: 0.85em; color: var(--text-muted); padding: 4px 0; }
-.task-hours-cal button.task-hours-cal-day { aspect-ratio: 1 / 1; height: auto; padding: 0; font-size: 1.05em; font-variant-numeric: tabular-nums; background: transparent; box-shadow: none; border-radius: var(--radius-m); }
+.task-hours-cal-title { font-size: 24px; font-weight: 600; }
+.task-hours-cal button.task-hours-cal-nav { font-size: 28px; padding: 2px 20px; }
+.task-hours-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.task-hours-cal-wd { text-align: center; font-size: 18px; color: var(--text-muted); padding: 4px 0; }
+.task-hours-cal button.task-hours-cal-day { aspect-ratio: 1 / 1; height: auto; padding: 0; font-size: 22px; font-variant-numeric: tabular-nums; background: transparent; box-shadow: none; border-radius: var(--radius-m); }
 .task-hours-cal button.task-hours-cal-day:hover { background: var(--background-modifier-hover); }
 .task-hours-cal-day.is-other { color: var(--text-faint); }
 .task-hours-cal .is-sun:not(.is-selected):not(.is-other) { color: var(--color-red); }
 .task-hours-cal .is-sat:not(.is-selected):not(.is-other) { color: var(--color-blue); }
 .task-hours-cal-day.is-today { outline: 2px solid var(--interactive-accent); outline-offset: -2px; font-weight: 700; }
 .task-hours-cal button.task-hours-cal-day.is-selected { background: var(--interactive-accent); color: var(--text-on-accent); font-weight: 700; }
-.task-hours-cal-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.task-hours-cal-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
