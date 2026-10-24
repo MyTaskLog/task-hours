@@ -4,7 +4,6 @@
 
 - Dashboard: total several folders at once, and leave folders out. Add folders as chips at the top (× removes one); **+ Leave out a folder** adds folders to skip, such as an archive inside a project. Your current folder is kept.
 - Queries: after `folder includes`, `path includes`, `filename includes` and `root includes` (and `does not include`), the vault's folders and files are suggested and narrowed as you type.
-
 - Dates are picked on a large calendar of Task Hours' own (the browser's date picker can't be resized): when clicking 🛫 / 📅 / ⏳ … in a list, in the ✏️ dialog, in the add-task form and in **Pick from calendar…**. Today is outlined, the chosen day filled; **Today**, **Tomorrow** and **Remove date** buttons sit below.
 - The ✏️ edit and ⏱️ estimate dialogs are larger and easier to read.
 
