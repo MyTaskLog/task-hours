@@ -85,7 +85,7 @@ The folders are remembered, so next time it's one click.
 
 ### Edit right from the list
 
-- Click **🛫 start** or **📅 due** to pick a new date. The task line in the note is updated.
+- Click **🛫 start** or **📅 due** to pick a new date on a large calendar (with Today / Tomorrow / Remove date buttons). The task line in the note is updated.
 - Click **⏱️** to change the estimate: type a number, choose **h** or **min** (a number of 10 or more is assumed to be minutes, as with `+`), or click one of the quick picks.
 
   <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png" alt="The estimate editor: a number, an h / min switch, a preview and quick picks" width="500">

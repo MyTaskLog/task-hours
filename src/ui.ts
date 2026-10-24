@@ -16,6 +16,7 @@ import {
 	setLineField,
 	totalMinutes,
 } from "./parse";
+import { DateModal, dateField } from "./calendar";
 import { EstimateModal, EstimatePicker } from "./estimate";
 import { durationValue } from "./shorthand";
 import { TGroup, filenameOf, urgency } from "./tquery";
@@ -113,18 +114,15 @@ export class EditTaskModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		this.setTitle(tr("edit.title"));
+		this.modalEl.addClass("task-hours-modal");
 		contentEl.createDiv({ cls: "task-hours-edit-name", text: this.task.name });
 		const estRow = new Setting(contentEl).setName(tr("add.estimate"));
 		estRow.settingEl.addClass("task-hours-estrow");
 		this.picker = new EstimatePicker(estRow.controlEl, this.task.minutes, { autofocus: true, onEnter: () => void this.save() });
-		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
-			t.inputEl.type = "date";
-			t.setValue(this.start).onChange((v) => (this.start = v));
-		});
-		new Setting(contentEl).setName(tr("add.due")).addText((t) => {
-			t.inputEl.type = "date";
-			t.setValue(this.due).onChange((v) => (this.due = v));
-		});
+		const dateRow = (label: string, value: string, set: (v: string) => void) =>
+			dateField(this.app, new Setting(contentEl).setName(label).controlEl, label, value, set);
+		dateRow("🛫 " + tr("add.start"), this.start, (v) => (this.start = v));
+		dateRow("📅 " + tr("add.due"), this.due, (v) => (this.due = v));
 		const dates: [TasksField, string][] = [
 			["scheduled", "⏳ " + tr("edit.scheduled")],
 			["created", "➕ " + tr("edit.created")],
@@ -133,10 +131,7 @@ export class EditTaskModal extends Modal {
 		];
 		for (const [f, label] of dates) {
 			if (this.extra[f] === undefined) continue;
-			new Setting(contentEl).setName(label).addText((t) => {
-				t.inputEl.type = "date";
-				t.setValue(this.extra[f] ?? "").onChange((v) => (this.extra[f] = v));
-			});
+			dateRow(label, this.extra[f] ?? "", (v) => (this.extra[f] = v));
 		}
 		if (this.extra.priority !== undefined) {
 			new Setting(contentEl).setName(tr("edit.priority")).addDropdown((d) => {
@@ -220,7 +215,8 @@ function dateChip(
 	value: string | null,
 	cls: string,
 	onSet: (v: string | null) => void,
-	fullDate = false
+	fullDate = false,
+	title = ""
 ) {
 	const chip = parent.createSpan({
 		cls: "task-hours-chip " + cls + (value ? "" : " is-empty"),
@@ -229,31 +225,9 @@ function dateChip(
 	});
 	const edit = (e: Event) => {
 		stop(e);
-		const input = createEl("input", { type: "date", cls: "task-hours-input" });
-		input.value = value ?? "";
-		chip.replaceWith(input);
-		input.focus();
-		try {
-			input.showPicker();
-		} catch {
-			/* older environments: type the date */
-		}
-		let finished = false;
-		const finish = (commit: boolean) => {
-			if (finished) return;
-			finished = true;
-			const v = input.value || null;
-			input.replaceWith(chip);
-			if (commit && v !== value) onSet(v);
-		};
-		input.addEventListener("change", () => finish(true));
-		// some environments blur when the picker opens, so check a moment later
-		input.addEventListener("blur", () => window.setTimeout(() => document.activeElement !== input && finish(true), 250));
-		input.addEventListener("keydown", (ev) => {
-			if (ev.key === "Escape") finish(false);
-			if (ev.key === "Enter") finish(true);
-		});
-		input.addEventListener("click", stop);
+		new DateModal(appOf(chip), `${icon} ${tr("cal.pick")}`, title, value, (v) => {
+			if (v !== value) onSet(v);
+		}).open();
 	};
 	chip.addEventListener("click", edit);
 	chip.addEventListener("keydown", (e) => e.key === "Enter" && edit(e));
@@ -477,7 +451,7 @@ function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptio
 	desc.appendText(" ");
 	const f = li.createSpan({ cls: "task-hours-tfields" });
 	const date = (emoji: string, value: string | null, key: string, field: TasksField) => {
-		if (value && !hide.has(key)) dateChip(f, emoji, value, "", (v) => void setTasksField(app, t, field, v), true);
+		if (value && !hide.has(key)) dateChip(f, emoji, value, "", (v) => void setTasksField(app, t, field, v), true, t.name);
 	};
 	if (!hide.has("estimate")) estimateChip(f, t, (v) => void setField(app, t, "estimate", v));
 	if (t.priority !== "none" && !hide.has("priority")) priorityChip(app, f, t);
@@ -485,7 +459,7 @@ function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptio
 	date("➕", t.created, "created date", "created");
 	// empty start / due aren't shown here (like Tasks) — add them with ✏️
 	if (t.startDate && !hide.has("start date"))
-		dateChip(f, "🛫", t.startDate, "task-hours-start", (v) => void setField(app, t, "start", v), true);
+		dateChip(f, "🛫", t.startDate, "task-hours-start", (v) => void setField(app, t, "start", v), true, t.name);
 	date("⏳", t.scheduled, "scheduled date", "scheduled");
 	if (t.due && !hide.has("due date"))
 		dateChip(
@@ -494,7 +468,8 @@ function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptio
 			t.due,
 			"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
 			(v) => void setField(app, t, "due", v),
-			true
+			true,
+			t.name
 		);
 	date("❌", t.cancelled, "cancelled date", "cancelled");
 	date("✅", t.doneDate, "done date", "done");
@@ -562,7 +537,7 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 		if (tm) ro("🔁", t.recurrence, "recurrence rule");
 		if (!hide.has("estimate")) estimateChip(meta, t, (v) => void setField(app, t, "estimate", v));
 		if (tm) ro("➕", t.created && labelDate(t.created), "created date");
-		if (!hide.has("start date")) dateChip(meta, "🛫", tm ? t.startDate : t.start, "task-hours-start", (v) => void setField(app, t, "start", v));
+		if (!hide.has("start date")) dateChip(meta, "🛫", tm ? t.startDate : t.start, "task-hours-start", (v) => void setField(app, t, "start", v), false, t.name);
 		if (tm) ro("⏳", t.scheduled && labelDate(t.scheduled), "scheduled date");
 		if (!hide.has("due date"))
 			dateChip(
@@ -570,7 +545,9 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 				"📅",
 				t.due,
 				"task-hours-due" + (!t.done && t.due && t.due < today ? " is-overdue" : ""),
-				(v) => void setField(app, t, "due", v)
+				(v) => void setField(app, t, "due", v),
+				false,
+				t.name
 			);
 		if (tm) ro("❌", t.cancelled && labelDate(t.cancelled), "cancelled date");
 		if (tm) ro("✅", t.doneDate && labelDate(t.doneDate), "done date");

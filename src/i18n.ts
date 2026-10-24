@@ -85,6 +85,13 @@ const en = {
 	"pick.start": "Pick a start date",
 	"pick.due": "Pick a due date",
 	"pick.ok": "OK",
+	"cal.prev": "Previous month",
+	"cal.next": "Next month",
+	"cal.today": "Today",
+	"cal.tomorrow": "Tomorrow",
+	"cal.clear": "Remove date",
+	"cal.choose": "Choose a date…",
+	"cal.pick": "Choose a date",
 
 	// date presets
 	"d.today": "Today",
@@ -244,6 +251,13 @@ const ja: Record<Key, string> = {
 	"pick.start": "開始予定日を選ぶ",
 	"pick.due": "納期を選ぶ",
 	"pick.ok": "決定",
+	"cal.prev": "前の月",
+	"cal.next": "次の月",
+	"cal.today": "今日",
+	"cal.tomorrow": "明日",
+	"cal.clear": "日付を消す",
+	"cal.choose": "日付を選ぶ…",
+	"cal.pick": "日付を選ぶ",
 
 	"d.today": "今日",
 	"d.tomorrow": "明日",

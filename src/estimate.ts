@@ -149,6 +149,7 @@ export class EstimateModal extends Modal {
 
 	onOpen() {
 		this.setTitle(tr("add.estimate"));
+		this.modalEl.addClass("task-hours-modal");
 		this.contentEl.addClass("task-hours-estmodal");
 		this.contentEl.createDiv({ cls: "task-hours-edit-name", text: this.name });
 		this.picker = new EstimatePicker(this.contentEl, this.initial, {

@@ -19,6 +19,7 @@ import { DASHBOARD_VIEW, DashboardView, RANGE_DAYS, RangeDays } from "./dashboar
 import { DateSuggest, EstimateSuggest, convertCurrentLine, shorthandExtension } from "./editor";
 import { EstimatePicker } from "./estimate";
 import { Lang, setLang, t as tr } from "./i18n";
+import { dateField } from "./calendar";
 import { CodeBlockSuggest } from "./fence";
 import { QuerySuggest } from "./qsuggest";
 import { PlainUnit, Query, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
@@ -200,14 +201,10 @@ class AddTaskModal extends Modal {
 		const estRow = new Setting(contentEl).setName(tr("add.estimate"));
 		estRow.settingEl.addClass("task-hours-estrow");
 		this.picker = new EstimatePicker(estRow.controlEl, null, { onEnter: () => this.submit() });
-		new Setting(contentEl).setName(tr("add.start")).addText((t) => {
-			t.inputEl.type = "date";
-			t.onChange((v) => (this.start = v));
-		});
-		new Setting(contentEl).setName(tr("add.due")).addText((t) => {
-			t.inputEl.type = "date";
-			t.onChange((v) => (this.due = v));
-		});
+		const startLabel = "🛫 " + tr("add.start");
+		const dueLabel = "📅 " + tr("add.due");
+		dateField(this.app, new Setting(contentEl).setName(startLabel).controlEl, startLabel, "", (v) => (this.start = v));
+		dateField(this.app, new Setting(contentEl).setName(dueLabel).controlEl, dueLabel, "", (v) => (this.due = v));
 		new Setting(contentEl).addButton((b) =>
 			b
 				.setButtonText(tr("add.submit"))

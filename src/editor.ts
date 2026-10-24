@@ -1,7 +1,8 @@
 // Editor helpers: date and estimate suggestions, and converting shorthand when the cursor leaves a line
 
 import { EditorView, ViewPlugin, ViewUpdate } from "@codemirror/view";
-import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, Modal, Setting, TFile } from "obsidian";
+import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile } from "obsidian";
+import { DateModal } from "./calendar";
 import { DatePreset, datePresets, labelDate, parseDateWord, toHalfWidth } from "./dates";
 import { t as tr } from "./i18n";
 import type TaskHoursPlugin from "./main";
@@ -132,7 +133,7 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 		};
 		this.close();
 		if (item.date) apply(item.date);
-		else new DatePickerModal(this.app, field, apply).open();
+		else new DateModal(this.app, tr(field === "start" ? "pick.start" : "pick.due"), "", null, (d) => d && apply(d)).open();
 	}
 }
 
@@ -203,41 +204,6 @@ export class EstimateSuggest extends EditorSuggest<EstimateItem> {
 function triggerBoundary(prev: string, s: TaskHoursPlugin["settings"]): boolean {
 	if (/[A-Za-z0-9._%+-]/.test(prev)) return false;
 	return ![s.startChar, s.dueChar, s.estimateChar].map(toHalfWidth).includes(prev);
-}
-
-class DatePickerModal extends Modal {
-	constructor(app: App, private field: Field, private onPick: (d: string) => void) {
-		super(app);
-	}
-	onOpen() {
-		this.setTitle(tr(this.field === "start" ? "pick.start" : "pick.due"));
-		let value = "";
-		new Setting(this.contentEl)
-			.addText((t) => {
-				t.inputEl.type = "date";
-				t.onChange((v) => (value = v));
-				window.setTimeout(() => {
-					t.inputEl.focus();
-					try {
-						t.inputEl.showPicker();
-					} catch {
-						/* noop */
-					}
-				}, 50);
-			})
-			.addButton((b) =>
-				b
-					.setButtonText(tr("pick.ok"))
-					.setCta()
-					.onClick(() => {
-						if (value) this.onPick(value);
-						this.close();
-					})
-			);
-	}
-	onClose() {
-		this.contentEl.empty();
-	}
 }
 
 /** When the cursor leaves a line (Enter, arrows, click), convert that line's shorthand */
