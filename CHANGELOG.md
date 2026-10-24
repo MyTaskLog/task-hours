@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- Fix: after choosing a query word from the suggestions (for example `path includes`), the next suggestions (the vault's folders) did not appear until you typed a space. They now appear straight away.
+
 ## 1.3.0
 
 - Dashboard: total several folders at once, and leave folders out. Add folders as chips at the top (× removes one); **+ Leave out a folder** adds folders to skip, such as an archive inside a project. Your current folder is kept.

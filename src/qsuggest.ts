@@ -313,8 +313,21 @@ export class QuerySuggest extends EditorSuggest<QItem> {
 		if (!ctx) return;
 		const text = item.text + (item.more ? " " : "");
 		const start = { line: ctx.start.line, ch: item.from };
+		// Close first, so the edit below can open the next suggestions instead of being closed by us
+		this.close();
 		ctx.editor.replaceRange(text, start, ctx.end);
 		ctx.editor.setCursor({ line: start.line, ch: item.from + text.length });
-		this.close();
+		// Something follows (e.g. "path includes " → the vault's folders): show the next suggestions straight away.
+		// Obsidian only re-checks suggestions on typing, so ask it to check again now.
+		if (item.more) {
+			const editor = ctx.editor;
+			const file = ctx.file;
+			window.setTimeout(() => (this as unknown as Retrigger).trigger?.(editor, file, true), 0);
+		}
 	}
+}
+
+/** EditorSuggest's own (undocumented) re-check; used only if present */
+interface Retrigger {
+	trigger?: (editor: Editor, file: TFile | null, openIfClosed: boolean) => void;
 }
