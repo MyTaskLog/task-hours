@@ -1,6 +1,6 @@
 // Task list rendering and editing from the list (done, start, due, estimate)
 
-import { App, MarkdownView, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
+import { App, Keymap, MarkdownView, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import { headerDate, labelDate } from "./dates";
 import { t as tr } from "./i18n";
 import {
@@ -420,6 +420,47 @@ export function renderQueryGroups(app: App, el: HTMLElement, groups: TGroup[], o
 	}
 }
 
+// [[note]], [[note|alias]], [[note#heading]], [text](note.md), [text](https://…), bare URLs and #tags
+const DESC_TOKEN =
+	/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]|\[([^\]]+)\]\(([^)\s]+)\)|(https?:\/\/[^\s)]+)|(^|\s)(#[\p{L}_/-][\p{L}\p{N}_/-]*)/gu;
+
+/** A task's description with working links, like Tasks shows it (wikilinks open the note, URLs open the browser) */
+export function renderDescription(app: App, el: HTMLElement, text: string, sourcePath: string) {
+	let last = 0;
+	const internal = (linktext: string, label: string) => {
+		const a = el.createEl("a", { cls: "internal-link", text: label, attr: { "data-href": linktext, href: linktext } });
+		a.addEventListener("click", (e) => {
+			stop(e);
+			void app.workspace.openLinkText(linktext, sourcePath, Keymap.isModEvent(e));
+		});
+		a.addEventListener("mouseover", (e) => {
+			app.workspace.trigger("hover-link", { event: e, source: "preview", hoverParent: el, targetEl: a, linktext, sourcePath });
+		});
+	};
+	const external = (url: string, label: string) => {
+		const a = el.createEl("a", { cls: "external-link", text: label, attr: { href: url, target: "_blank", rel: "noopener" } });
+		a.addEventListener("click", (e) => e.stopPropagation());
+	};
+	for (const m of text.matchAll(DESC_TOKEN)) {
+		const i = m.index ?? 0;
+		if (i > last) el.appendText(text.slice(last, i));
+		if (m[1] !== undefined) {
+			const target = m[1].trim();
+			internal(target, m[2]?.trim() || target.replace(/#\^?/, " > "));
+		} else if (m[3] !== undefined) {
+			const href = m[4];
+			if (/^[a-z][\w+.-]*:/i.test(href)) external(href, m[3]);
+			else internal(decodeURI(href).replace(/\.md(?=$|#)/, ""), m[3]);
+		} else if (m[5] !== undefined) external(m[5], m[5]);
+		else if (m[7] !== undefined) {
+			el.appendText(m[6]); // the space before the tag
+			el.createEl("a", { cls: "tag", text: m[7], attr: { href: m[7] } }).addEventListener("click", (e) => stop(e));
+		}
+		last = i + m[0].length;
+	}
+	if (last < text.length) el.appendText(text.slice(last));
+}
+
 /** One task in the style of the Tasks plugin: description, fields inline, (backlink), ✏️ */
 function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptions, today: string) {
 	const hide = opt.hide ?? new Set<string>();
@@ -431,7 +472,9 @@ function renderTasksStyleItem(app: App, ul: HTMLElement, t: Task, opt: ListOptio
 		stop(e);
 		void toggleDone(app, t);
 	});
-	li.createSpan({ cls: "task-hours-tdesc", text: t.name + " " });
+	const desc = li.createSpan({ cls: "task-hours-tdesc" });
+	renderDescription(app, desc, t.name, t.path);
+	desc.appendText(" ");
 	const f = li.createSpan({ cls: "task-hours-tfields" });
 	const date = (emoji: string, value: string | null, key: string, field: TasksField) => {
 		if (value && !hide.has(key)) dateChip(f, emoji, value, "", (v) => void setTasksField(app, t, field, v), true);
@@ -504,7 +547,9 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 			stop(e);
 			void toggleDone(app, t);
 		});
-		const name = li.createEl("a", { cls: "task-hours-name", text: t.name, attr: { "aria-label": tr("list.open") } });
+		// Clicking the text opens the task; links inside it open their own target
+		const name = li.createSpan({ cls: "task-hours-name", attr: { "aria-label": tr("list.open") } });
+		renderDescription(app, name, t.name, t.path);
 		name.addEventListener("click", (e) => {
 			stop(e);
 			void openTask(app, t);

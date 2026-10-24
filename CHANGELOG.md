@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2
+
+- Fix: links in a task's text (`[[note]]`, `[[note|alias]]`, `[text](url)`, plain URLs) were shown as raw text in Task Hours lists. They are now links you can click (and hover to preview), as in Tasks; `#tags` are shown as tags.
+
 ## 1.2.1
 
 - Group headings and their estimate subtotals in query results are larger and easier to read, with the subtotal right next to the heading.
