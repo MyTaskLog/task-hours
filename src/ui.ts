@@ -1,6 +1,6 @@
 // Task list rendering and editing from the list (done, start, due, estimate)
 
-import { App, Keymap, MarkdownView, Menu, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
+import { App, Keymap, MarkdownView, Modal, Notice, Setting, TFile, setIcon } from "obsidian";
 import { headerDate, labelDate } from "./dates";
 import { t as tr } from "./i18n";
 import {
@@ -244,48 +244,105 @@ function priorityChip(app: App, parent: HTMLElement, t: Task) {
 		text: PRIORITY_EMOJI[t.priority],
 		attr: { "aria-label": priorityLabel(t.priority), tabindex: "0" },
 	});
-	chip.addEventListener("click", (e) => {
+	const edit = (e: Event) => {
 		stop(e);
-		const menu = new Menu();
-		for (const p of PRIORITY_ORDER)
-			menu.addItem((i) =>
-				i
-					.setTitle(priorityLabel(p))
-					.setChecked(p === t.priority)
-					.onClick(() => void setTasksField(app, t, "priority", p === "none" ? null : p))
-			);
-		menu.showAtMouseEvent(e);
-	});
+		new PriorityModal(app, t).open();
+	};
+	chip.addEventListener("click", edit);
+	chip.addEventListener("keydown", (e) => e.key === "Enter" && edit(e));
 }
 
-/** Recurrence rule that Tasks set: click to edit the text (empty removes it) */
+/** Large list of priorities; choosing one saves it */
+class PriorityModal extends Modal {
+	constructor(
+		app: App,
+		private task: Task
+	) {
+		super(app);
+	}
+	onOpen() {
+		this.setTitle(tr("edit.priority"));
+		this.modalEl.addClass("task-hours-modal");
+		const { contentEl } = this;
+		contentEl.createDiv({ cls: "task-hours-edit-name", text: this.task.name });
+		const list = contentEl.createDiv({ cls: "task-hours-choices" });
+		for (const p of PRIORITY_ORDER) {
+			const b = list.createEl("button", { cls: "task-hours-choice", text: priorityLabel(p) });
+			if (p === this.task.priority) b.addClass("is-active");
+			b.addEventListener("click", () => {
+				if (p !== this.task.priority) void setTasksField(this.app, this.task, "priority", p === "none" ? null : p);
+				this.close();
+			});
+		}
+	}
+	onClose() {
+		this.contentEl.empty();
+	}
+}
+
+/** Recurrence rule that Tasks set: click to edit it in a dialog (empty or "Remove" deletes it) */
 function recurrenceChip(app: App, parent: HTMLElement, t: Task) {
 	const chip = parent.createSpan({
 		cls: "task-hours-chip",
 		text: `🔁 ${t.recurrence}`,
 		attr: { "aria-label": tr("list.clickToChange"), tabindex: "0" },
 	});
-	chip.addEventListener("click", (e) => {
+	const edit = (e: Event) => {
 		stop(e);
-		const input = createEl("input", { type: "text", cls: "task-hours-input task-hours-input-rec" });
-		input.value = t.recurrence ?? "";
-		chip.replaceWith(input);
-		input.focus();
-		let done = false;
-		const finish = (commit: boolean) => {
-			if (done) return;
-			done = true;
-			input.replaceWith(chip);
-			const v = input.value.trim();
-			if (commit && v !== t.recurrence) void setTasksField(app, t, "recurrence", v || null);
+		new RecurrenceModal(app, t).open();
+	};
+	chip.addEventListener("click", edit);
+	chip.addEventListener("keydown", (e) => e.key === "Enter" && edit(e));
+}
+
+const RECURRENCE_EXAMPLES = ["every day", "every weekday", "every week", "every week on Monday", "every 2 weeks", "every month", "every month on the 1st", "every year"];
+
+class RecurrenceModal extends Modal {
+	constructor(
+		app: App,
+		private task: Task
+	) {
+		super(app);
+	}
+	onOpen() {
+		this.setTitle("🔁 " + tr("edit.recurrence"));
+		this.modalEl.addClass("task-hours-modal");
+		const { contentEl } = this;
+		contentEl.createDiv({ cls: "task-hours-edit-name", text: this.task.name });
+		const input = contentEl.createEl("input", { type: "text", cls: "task-hours-rec-input" });
+		input.value = this.task.recurrence ?? "";
+		window.setTimeout(() => input.focus(), 0);
+		const quick = contentEl.createDiv({ cls: "task-hours-estpicker-quick task-hours-rec-quick" });
+		for (const ex of RECURRENCE_EXAMPLES) {
+			const b = quick.createEl("button", { cls: "task-hours-estpicker-chip", text: ex });
+			b.addEventListener("click", () => {
+				input.value = ex;
+				input.focus();
+			});
+		}
+		const save = (v: string | null) => {
+			if (v !== this.task.recurrence) void setTasksField(this.app, this.task, "recurrence", v);
+			this.close();
 		};
-		input.addEventListener("keydown", (ev) => {
-			if (ev.key === "Enter" && !ev.isComposing) finish(true);
-			if (ev.key === "Escape") finish(false);
+		input.addEventListener("keydown", (e) => {
+			if (e.key === "Enter" && !e.isComposing) {
+				e.preventDefault();
+				save(input.value.trim() || null);
+			}
 		});
-		input.addEventListener("blur", () => finish(true));
-		input.addEventListener("click", stop);
-	});
+		new Setting(contentEl)
+			.addButton((b) => b.setButtonText(tr("edit.removeRecurrence")).onClick(() => save(null)))
+			.addButton((b) => b.setButtonText(tr("edit.cancel")).onClick(() => this.close()))
+			.addButton((b) =>
+				b
+					.setButtonText(tr("edit.save"))
+					.setCta()
+					.onClick(() => save(input.value.trim() || null))
+			);
+	}
+	onClose() {
+		this.contentEl.empty();
+	}
 }
 
 function estimateChip(parent: HTMLElement, t: Task, onSet: (v: string | null) => void) {

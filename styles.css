@@ -233,3 +233,20 @@
 .task-hours-cal-day.is-today { outline: 2px solid var(--interactive-accent); outline-offset: -2px; font-weight: 700; }
 .task-hours-cal button.task-hours-cal-day.is-selected { background: var(--interactive-accent); color: var(--text-on-accent); font-weight: 700; }
 .task-hours-cal-quick { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+
+/* Priority / recurrence dialogs */
+.task-hours-choices { display: flex; flex-direction: column; gap: 8px; }
+.task-hours-modal button.task-hours-choice { text-align: left; justify-content: flex-start; }
+.task-hours-modal button.task-hours-choice.is-active { background: var(--interactive-accent); color: var(--text-on-accent); }
+.task-hours-rec-input { width: 100%; margin-bottom: 14px; }
+
+/* + @ ! suggestion lists in the editor: same large text as the dialogs */
+.suggestion-container:has(.task-hours-suggest) {
+  --font-ui-smaller: 26px; --font-ui-small: 26px; --font-ui-medium: 26px;
+  font-size: 26px; min-width: 420px;
+}
+.suggestion-container:has(.task-hours-suggest) .suggestion-item { font-size: 26px; padding: 8px 14px; gap: 14px; }
+.suggestion-container:has(.task-hours-suggest) .task-hours-suggest-kind,
+.suggestion-container:has(.task-hours-suggest) .task-hours-suggest-date,
+.suggestion-container:has(.task-hours-suggest) .prompt-instruction { font-size: 26px; }
+.suggestion-container:has(.task-hours-suggest) .prompt-instructions { gap: 18px; padding: 8px 14px; }

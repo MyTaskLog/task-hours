@@ -193,6 +193,7 @@ class AddTaskModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		this.setTitle(tr("add.title"));
+		this.modalEl.addClass("task-hours-modal");
 
 		new Setting(contentEl).setName(tr("add.name")).addText((t) => {
 			t.setPlaceholder(tr("add.namePh")).onChange((v) => (this.name = v));

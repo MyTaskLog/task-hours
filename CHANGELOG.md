@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.2
+
+- The add-task form uses the same large text as the edit dialogs.
+- The `+` (estimate) and `@` / `!` (date) suggestion lists in the editor use the same large text too.
+- Priority and recurrence set by Tasks are now edited in large dialogs too: clicking the priority shows a big list to choose from, clicking 🔁 opens a dialog with the rule, example rules to pick, and **Remove recurrence**.
+
 ## 1.3.1
 
 - Fix: after choosing a query word from the suggestions (for example `path includes`), the next suggestions (the vault's folders) did not appear until you typed a space. They now appear straight away.
