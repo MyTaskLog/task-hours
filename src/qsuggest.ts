@@ -6,6 +6,7 @@
 import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile, TFolder } from "obsidian";
 import { blockKindAt } from "./fence";
 import { lang, t as tr } from "./i18n";
+import { markBigSuggest } from "./editor";
 import type TaskHoursPlugin from "./main";
 
 /** One step of the grammar. `end`: a complete line can stop here; `free`: free text follows (no suggestions) */
@@ -276,6 +277,7 @@ export class QuerySuggest extends EditorSuggest<QItem> {
 		private plugin: TaskHoursPlugin
 	) {
 		super(app);
+		markBigSuggest(this);
 		this.limit = 30;
 		this.setInstructions([
 			{ command: "↑↓", purpose: tr("sug.select") },
@@ -302,6 +304,7 @@ export class QuerySuggest extends EditorSuggest<QItem> {
 
 	renderSuggestion(item: QItem, el: HTMLElement): void {
 		el.addClass("task-hours-qsug");
+		el.closest(".suggestion-container")?.addClass("task-hours-bigsuggest"); // in case suggestEl was not available
 		const top = el.createDiv({ cls: "task-hours-qsug-main" });
 		top.createSpan({ cls: "task-hours-qsug-text", text: item.text });
 		if (item.th) top.createSpan({ cls: "task-hours-qsug-badge", text: "Task Hours" });

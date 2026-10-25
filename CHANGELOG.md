@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.4
+
+- The query suggestions inside `task-hours` / `tasks` blocks, and the block-name suggestions after ```` ``` ````, use the same large text as the other suggestion lists.
+
 ## 1.3.3
 
 - styles.css no longer uses the `:has()` selector (flagged by the community review as slow); the large suggestion lists look the same.

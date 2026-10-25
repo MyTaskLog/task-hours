@@ -42,7 +42,7 @@ export function insertDateField(
  * Give our suggestion popup a class so styles.css can show it with large text.
  * (Uses the popup's own element when Obsidian exposes it; avoids the slow CSS :has().)
  */
-function markBigSuggest(s: object) {
+export function markBigSuggest(s: object) {
 	(s as { suggestEl?: HTMLElement }).suggestEl?.addClass("task-hours-bigsuggest");
 }
 

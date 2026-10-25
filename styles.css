@@ -248,5 +248,11 @@
 .suggestion-container.task-hours-bigsuggest .suggestion-item { font-size: 26px; padding: 8px 14px; gap: 14px; }
 .suggestion-container.task-hours-bigsuggest .task-hours-suggest-kind,
 .suggestion-container.task-hours-bigsuggest .task-hours-suggest-date,
-.suggestion-container.task-hours-bigsuggest .prompt-instruction { font-size: 26px; }
+.suggestion-container.task-hours-bigsuggest .prompt-instruction,
+.suggestion-container.task-hours-bigsuggest .task-hours-qsug-text,
+.suggestion-container.task-hours-bigsuggest .task-hours-qsug-desc,
+.suggestion-container.task-hours-bigsuggest .task-hours-blocksug-name,
+.suggestion-container.task-hours-bigsuggest .task-hours-blocksug-desc { font-size: 26px; }
+.suggestion-container.task-hours-bigsuggest .task-hours-qsug-badge { font-size: 18px; padding: 1px 8px; }
+.suggestion-container.task-hours-bigsuggest .task-hours-qsug-main { gap: 12px; }
 .suggestion-container.task-hours-bigsuggest .prompt-instructions { gap: 18px; padding: 8px 14px; }

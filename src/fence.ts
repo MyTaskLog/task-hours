@@ -3,6 +3,7 @@
 
 import { App, Editor, EditorPosition, EditorSuggest, EditorSuggestContext, EditorSuggestTriggerInfo, TFile } from "obsidian";
 import { t as tr } from "./i18n";
+import { markBigSuggest } from "./editor";
 import type TaskHoursPlugin from "./main";
 
 interface BlockItem {
@@ -80,6 +81,7 @@ export class CodeBlockSuggest extends EditorSuggest<BlockItem> {
 		private plugin: TaskHoursPlugin
 	) {
 		super(app);
+		markBigSuggest(this);
 		this.setInstructions([
 			{ command: "↑↓", purpose: tr("sug.select") },
 			{ command: "↵", purpose: tr("sug.confirm") },
@@ -114,6 +116,7 @@ export class CodeBlockSuggest extends EditorSuggest<BlockItem> {
 
 	renderSuggestion(item: BlockItem, el: HTMLElement): void {
 		el.addClass("task-hours-blocksug");
+		el.closest(".suggestion-container")?.addClass("task-hours-bigsuggest"); // in case suggestEl was not available
 		el.createDiv({ cls: "task-hours-blocksug-name", text: item.name });
 		el.createDiv({ cls: "task-hours-blocksug-desc", text: item.desc });
 	}
