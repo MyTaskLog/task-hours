@@ -38,12 +38,21 @@ export function insertDateField(
 	return { text, ch: after + 1 };
 }
 
+/**
+ * Give our suggestion popup a class so styles.css can show it with large text.
+ * (Uses the popup's own element when Obsidian exposes it; avoids the slow CSS :has().)
+ */
+function markBigSuggest(s: object) {
+	(s as { suggestEl?: HTMLElement }).suggestEl?.addClass("task-hours-bigsuggest");
+}
+
 /** Typing @ or ! in a task line shows date suggestions */
 export class DateSuggest extends EditorSuggest<DateItem> {
 	private field: Field = "start";
 
 	constructor(app: App, private plugin: TaskHoursPlugin) {
 		super(app);
+		markBigSuggest(this);
 		this.limit = 15;
 		this.setInstructions([
 			{ command: "↑↓", purpose: tr("sug.select") },
@@ -109,6 +118,7 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 	}
 
 	renderSuggestion(item: DateItem, el: HTMLElement) {
+		el.closest(".suggestion-container")?.addClass("task-hours-bigsuggest"); // in case suggestEl was not available
 		el.addClass("task-hours-suggest");
 		const icon = this.field === "start" ? "🛫" : "📅";
 		el.createSpan({ cls: "task-hours-suggest-label", text: `${icon} ${item.label}` });
@@ -148,6 +158,7 @@ export class EstimateSuggest extends EditorSuggest<EstimateItem> {
 		private plugin: TaskHoursPlugin
 	) {
 		super(app);
+		markBigSuggest(this);
 		this.limit = 10;
 		this.setInstructions([
 			{ command: "↑↓", purpose: tr("sug.select") },
@@ -179,6 +190,7 @@ export class EstimateSuggest extends EditorSuggest<EstimateItem> {
 	}
 
 	renderSuggestion(item: EstimateItem, el: HTMLElement) {
+		el.closest(".suggestion-container")?.addClass("task-hours-bigsuggest"); // in case suggestEl was not available
 		el.addClass("task-hours-suggest");
 		el.createSpan({ cls: "task-hours-suggest-label", text: `⏱️ ${formatDuration(item.minutes)}` });
 		el.createSpan({ cls: "task-hours-suggest-kind", text: tr("sug.estimate") });

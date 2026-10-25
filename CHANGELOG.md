@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.3
+
+- styles.css no longer uses the `:has()` selector (flagged by the community review as slow); the large suggestion lists look the same.
+
 ## 1.3.2
 
 - The add-task form uses the same large text as the edit dialogs.

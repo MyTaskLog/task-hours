@@ -241,12 +241,12 @@
 .task-hours-rec-input { width: 100%; margin-bottom: 14px; }
 
 /* + @ ! suggestion lists in the editor: same large text as the dialogs */
-.suggestion-container:has(.task-hours-suggest) {
+.suggestion-container.task-hours-bigsuggest {
   --font-ui-smaller: 26px; --font-ui-small: 26px; --font-ui-medium: 26px;
   font-size: 26px; min-width: 420px;
 }
-.suggestion-container:has(.task-hours-suggest) .suggestion-item { font-size: 26px; padding: 8px 14px; gap: 14px; }
-.suggestion-container:has(.task-hours-suggest) .task-hours-suggest-kind,
-.suggestion-container:has(.task-hours-suggest) .task-hours-suggest-date,
-.suggestion-container:has(.task-hours-suggest) .prompt-instruction { font-size: 26px; }
-.suggestion-container:has(.task-hours-suggest) .prompt-instructions { gap: 18px; padding: 8px 14px; }
+.suggestion-container.task-hours-bigsuggest .suggestion-item { font-size: 26px; padding: 8px 14px; gap: 14px; }
+.suggestion-container.task-hours-bigsuggest .task-hours-suggest-kind,
+.suggestion-container.task-hours-bigsuggest .task-hours-suggest-date,
+.suggestion-container.task-hours-bigsuggest .prompt-instruction { font-size: 26px; }
+.suggestion-container.task-hours-bigsuggest .prompt-instructions { gap: 18px; padding: 8px 14px; }
