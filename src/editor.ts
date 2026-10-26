@@ -14,7 +14,7 @@ interface DateItem {
 	date: string | null; // null = open the date picker
 }
 
-const FIELD_ICON: Record<Field, string> = { estimate: "⏱️", start: "🛫", due: "📅" };
+const FIELD_ICON: Record<Field, string> = { estimate: "⏱️", start: "🛫", scheduled: "⏳", due: "📅" };
 
 /**
  * Put a field (date or estimate) into the line and return where the cursor should go:
@@ -46,7 +46,7 @@ export function markBigSuggest(s: object) {
 	(s as { suggestEl?: HTMLElement }).suggestEl?.addClass("task-hours-bigsuggest");
 }
 
-/** Typing @ or ! in a task line shows date suggestions */
+/** Typing the scheduled (@), start ($) or due (!) symbol in a task line shows date suggestions */
 export class DateSuggest extends EditorSuggest<DateItem> {
 	private field: Field = "start";
 
@@ -70,6 +70,7 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 		const bodyStart = line.length - tm[2].length;
 		const before = toHalfWidth(line.slice(0, cursor.ch));
 		const triggers: [string, Field][] = [
+			[toHalfWidth(s.scheduledChar), "scheduled"],
 			[toHalfWidth(s.startChar), "start"],
 			[toHalfWidth(s.dueChar), "due"],
 		];
@@ -120,10 +121,10 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 	renderSuggestion(item: DateItem, el: HTMLElement) {
 		el.closest(".suggestion-container")?.addClass("task-hours-bigsuggest"); // in case suggestEl was not available
 		el.addClass("task-hours-suggest");
-		const icon = this.field === "start" ? "🛫" : "📅";
+		const icon = FIELD_ICON[this.field];
 		el.createSpan({ cls: "task-hours-suggest-label", text: `${icon} ${item.label}` });
 		if (item.date) el.createSpan({ cls: "task-hours-suggest-date", text: labelDate(item.date) });
-		el.createSpan({ cls: "task-hours-suggest-kind", text: tr(this.field === "start" ? "sug.start" : "sug.due") });
+		el.createSpan({ cls: "task-hours-suggest-kind", text: tr(this.field === "due" ? "sug.due" : this.field === "scheduled" ? "sug.scheduled" : "sug.start") });
 	}
 
 	selectSuggestion(item: DateItem, _evt: MouseEvent | KeyboardEvent) {
@@ -143,7 +144,7 @@ export class DateSuggest extends EditorSuggest<DateItem> {
 		};
 		this.close();
 		if (item.date) apply(item.date);
-		else new DateModal(this.app, tr(field === "start" ? "pick.start" : "pick.due"), "", null, (d) => d && apply(d)).open();
+		else new DateModal(this.app, tr(field === "due" ? "pick.due" : field === "scheduled" ? "pick.scheduled" : "pick.start"), "", null, (d) => d && apply(d)).open();
 	}
 }
 

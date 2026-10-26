@@ -14,7 +14,7 @@ export interface Task {
 	done: boolean;
 	name: string; // description without the Tasks fields (tags kept)
 	minutes: number | null; // estimate in minutes
-	start: string | null; // 🛫, or ⏳ when there is no 🛫 (used by the dashboard)
+	start: string | null; // the date chosen in "Total by" (⏳ / 🛫 / 📅), used by the dashboard
 	due: string | null; // YYYY-MM-DD
 	// Tasks plugin fields, as written
 	startDate: string | null; // 🛫 only
@@ -93,7 +93,23 @@ export function setPlainUnit(u: PlainUnit) {
 	for (const fn of plainUnitListeners) fn();
 }
 const plainUnitListeners = new Set<() => void>();
-/** Re-render when the setting changes; returns a function that stops listening */
+
+/**
+ * Which date the dashboard (and "start:" / "group: start" in older blocks) totals by:
+ * "scheduled" = ⏳, "start" = 🛫, "due" = 📅 — only that date; a task without it counts as "no date".
+ */
+export type DateBasis = "scheduled" | "start" | "due";
+let dateBasis: DateBasis = "scheduled";
+export function setDateBasis(b: DateBasis) {
+	if (b === dateBasis) return;
+	dateBasis = b;
+	for (const fn of plainUnitListeners) fn();
+}
+export function getDateBasis(): DateBasis {
+	return dateBasis;
+}
+export const BASIS_EMOJI: Record<DateBasis, string> = { scheduled: "⏳", start: "🛫", due: "📅" };
+/** Re-render when the setting (plain-number unit or date basis) changes; returns a function that stops listening */
 export function onPlainUnitChange(fn: () => void): () => void {
 	plainUnitListeners.add(fn);
 	return () => plainUnitListeners.delete(fn);
@@ -171,7 +187,7 @@ export function parseTaskLine(raw: string, path: string, line: number, heading: 
 		done: DONE_STATUSES.includes(status),
 		name: name || tr("untitled"),
 		minutes: est ? parseEstimateField(est[1]) : null,
-		start: startDate ?? scheduled,
+		start: dateBasis === "scheduled" ? scheduled : dateBasis === "start" ? startDate : get(DUE_RE),
 		due: get(DUE_RE),
 		startDate,
 		scheduled,
@@ -448,22 +464,25 @@ export function totalMinutes(tasks: Task[]): number {
 
 // ---------- Editing fields in a task line ----------
 
-export type Field = "estimate" | "start" | "due";
+export type Field = "estimate" | "start" | "scheduled" | "due";
 
 const FIELD_RE: Record<Field, RegExp> = {
 	estimate: new RegExp("⏱\\uFE0F?\\s*(?:" + DURATION + "|\\S*)", "u"),
 	start: /🛫️?\s*\d{4}-\d{2}-\d{2}/u,
+	scheduled: /⏳️?\s*\d{4}-\d{2}-\d{2}/u,
 	due: /📅️?\s*\d{4}-\d{2}-\d{2}/u,
 };
 const FIELD_TEXT: Record<Field, (v: string) => string> = {
 	estimate: (v) => `⏱️ ${v}`,
 	start: (v) => `🛫 ${v}`,
+	scheduled: (v) => `⏳ ${v}`,
 	due: (v) => `📅 ${v}`,
 };
 // When inserting, place the field before these (matches the Tasks plugin's order)
 const INSERT_BEFORE: Record<Field, RegExp> = {
 	estimate: /[🔺⏫🔼🔽⏬🔁🏁➕🛫⏳📅✅❌🆔⛔]|\s\^[A-Za-z0-9-]+\s*$/u,
 	start: /[⏳📅✅❌🆔⛔🏁]|\s\^[A-Za-z0-9-]+\s*$/u,
+	scheduled: /[📅✅❌🆔⛔🏁]|\s\^[A-Za-z0-9-]+\s*$/u,
 	due: /[✅❌🆔⛔🏁]|\s\^[A-Za-z0-9-]+\s*$/u,
 };
 
@@ -524,10 +543,11 @@ export function replaceTasksField(line: string, field: TasksField, value: string
 }
 
 /** Build a task line (Tasks-compatible order: ⏱️ goes before the dates) */
-export function buildTaskLine(name: string, estimate: string, start: string, due: string): string {
+export function buildTaskLine(name: string, estimate: string, scheduled: string, start: string, due: string): string {
 	let s = `- [ ] ${name.trim()}`;
 	if (estimate.trim()) s += ` ⏱️ ${estimate.trim()}`;
 	if (start) s += ` 🛫 ${start}`;
+	if (scheduled) s += ` ⏳ ${scheduled}`;
 	if (due) s += ` 📅 ${due}`;
 	return s;
 }

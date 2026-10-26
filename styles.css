@@ -256,3 +256,15 @@
 .suggestion-container.task-hours-bigsuggest .task-hours-qsug-badge { font-size: 18px; padding: 1px 8px; }
 .suggestion-container.task-hours-bigsuggest .task-hours-qsug-main { gap: 12px; }
 .suggestion-container.task-hours-bigsuggest .prompt-instructions { gap: 18px; padding: 8px 14px; }
+
+/* ---- Dashboard (right sidebar): larger text for everyone ----
+   Obsidian sizes sidebar text with fixed --font-ui-* values, so they are raised inside the dashboard */
+.task-hours-dashboard {
+  font-size: 22px;
+  --font-ui-smaller: 16px;
+  --font-ui-small: 18px;
+  --font-ui-medium: 20px;
+  --input-height: 40px;
+}
+.task-hours-dashboard input,
+.task-hours-dashboard button { font-size: 18px; }

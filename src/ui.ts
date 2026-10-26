@@ -12,6 +12,7 @@ import {
 	TasksField,
 	fmt,
 	formatDuration,
+	getDateBasis,
 	replaceTasksField,
 	setLineField,
 	totalMinutes,
@@ -32,6 +33,7 @@ function appOf(_el: HTMLElement): App {
 }
 
 export type GroupBy = "none" | "start" | "due" | "file";
+const BASIS_NONE = { scheduled: "group.noScheduled", start: "group.noStart", due: "group.noDue" } as const;
 
 export async function collectTasks(app: App, files: TFile[], parse: (c: string, p: string) => Task[]): Promise<Task[]> {
 	const out: Task[] = [];
@@ -82,7 +84,7 @@ export function setFields(
 	tasksValues: Partial<Record<TasksField, string | null>> = {}
 ) {
 	return rewrite(app, t, (l) => {
-		for (const f of ["estimate", "start", "due"] as Field[]) if (f in values) l = setLineField(l, f, values[f] ?? null);
+		for (const f of ["estimate", "start", "scheduled", "due"] as Field[]) if (f in values) l = setLineField(l, f, values[f] ?? null);
 		for (const [f, v] of Object.entries(tasksValues) as [TasksField, string | null][]) l = replaceTasksField(l, f, v);
 		return l;
 	});
@@ -92,6 +94,7 @@ export function setFields(
 export class EditTaskModal extends Modal {
 	private picker!: EstimatePicker;
 	private start: string;
+	private scheduled: string;
 	private due: string;
 	// Fields Tasks added — editable only when the task already has them
 	private extra: Partial<Record<TasksField, string>> = {};
@@ -102,8 +105,8 @@ export class EditTaskModal extends Modal {
 	) {
 		super(app);
 		this.start = task.startDate ?? "";
+		this.scheduled = task.scheduled ?? "";
 		this.due = task.due ?? "";
-		if (task.scheduled) this.extra.scheduled = task.scheduled;
 		if (task.created) this.extra.created = task.created;
 		if (task.doneDate) this.extra.done = task.doneDate;
 		if (task.cancelled) this.extra.cancelled = task.cancelled;
@@ -121,10 +124,11 @@ export class EditTaskModal extends Modal {
 		this.picker = new EstimatePicker(estRow.controlEl, this.task.minutes, { autofocus: true, onEnter: () => void this.save() });
 		const dateRow = (label: string, value: string, set: (v: string) => void) =>
 			dateField(this.app, new Setting(contentEl).setName(label).controlEl, label, value, set);
+		// Task Hours can add ⏳ scheduled, 🛫 start and 📅 due (the three date symbols)
+		dateRow("⏳ " + tr("add.scheduled"), this.scheduled, (v) => (this.scheduled = v));
 		dateRow("🛫 " + tr("add.start"), this.start, (v) => (this.start = v));
 		dateRow("📅 " + tr("add.due"), this.due, (v) => (this.due = v));
 		const dates: [TasksField, string][] = [
-			["scheduled", "⏳ " + tr("edit.scheduled")],
 			["created", "➕ " + tr("edit.created")],
 			["done", "✅ " + tr("edit.done")],
 			["cancelled", "❌ " + tr("edit.cancelled")],
@@ -166,13 +170,13 @@ export class EditTaskModal extends Modal {
 			new Notice(tr("add.badEstimate"));
 			return;
 		}
-		if (this.start && this.due && this.start > this.due) {
-			new Notice(tr("add.startAfterDue"));
+		if (this.due && ((this.start && this.start > this.due) || (this.scheduled && this.scheduled > this.due))) {
+			new Notice(tr("add.dateAfterDue"));
 			return;
 		}
 		const extra: Partial<Record<TasksField, string | null>> = {};
 		for (const [f, v] of Object.entries(this.extra) as [TasksField, string][]) extra[f] = v.trim() && v !== "none" ? v.trim() : null;
-		await setFields(this.app, this.task, { estimate: est, start: this.start || null, due: this.due || null }, extra);
+		await setFields(this.app, this.task, { estimate: est, start: this.start || null, scheduled: this.scheduled || null, due: this.due || null }, extra);
 		this.close();
 	}
 
@@ -400,7 +404,7 @@ export function renderTaskList(app: App, el: HTMLElement, tasks: Task[], opt: Li
 			const h = el.createDiv({ cls: "task-hours-group" });
 			const label =
 				k === NONE
-					? tr(opt.group === "start" ? "group.noStart" : "group.noDue")
+					? tr(opt.group === "start" ? BASIS_NONE[getDateBasis()] : "group.noDue")
 					: opt.group === "file"
 						? k.replace(/\.md$/, "")
 						: headerDate(k);
@@ -594,8 +598,15 @@ function renderItems(app: App, parent: HTMLElement, tasks: Task[], opt: ListOpti
 		if (tm) ro("🔁", t.recurrence, "recurrence rule");
 		if (!hide.has("estimate")) estimateChip(meta, t, (v) => void setField(app, t, "estimate", v));
 		if (tm) ro("➕", t.created && labelDate(t.created), "created date");
-		if (!hide.has("start date")) dateChip(meta, "🛫", tm ? t.startDate : t.start, "task-hours-start", (v) => void setField(app, t, "start", v), false, t.name);
-		if (tm) ro("⏳", t.scheduled && labelDate(t.scheduled), "scheduled date");
+		// Dashboard / older blocks: the plan date (⏳ or 🛫 per the setting); Tasks-style rows show 🛫 and ⏳ as they are
+		if (tm) {
+			if (!hide.has("start date")) dateChip(meta, "🛫", t.startDate, "task-hours-start", (v) => void setField(app, t, "start", v), false, t.name);
+			ro("⏳", t.scheduled && labelDate(t.scheduled), "scheduled date");
+		} else {
+			// Dashboard / older blocks: ⏳ scheduled always (click to add), 🛫 start when the task has one, then 📅 due
+			if (!hide.has("scheduled date")) dateChip(meta, "⏳", t.scheduled, "task-hours-start", (v) => void setField(app, t, "scheduled", v), false, t.name);
+			if (t.startDate && !hide.has("start date")) dateChip(meta, "🛫", t.startDate, "task-hours-start", (v) => void setField(app, t, "start", v), false, t.name);
+		}
 		if (!hide.has("due date"))
 			dateChip(
 				meta,

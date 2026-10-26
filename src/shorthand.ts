@@ -4,7 +4,8 @@ import { parseDatePrefix, toHalfWidth } from "./dates";
 import { Field, parseDuration, setLineField } from "./parse";
 
 export interface ShorthandOptions {
-	startChar: string; // default "@"
+	scheduledChar: string; // ⏳ — default "@" (existing users: "$")
+	startChar: string; // 🛫 — default "$" (existing users keep "@")
 	dueChar: string; // default "!"
 	estimateChar: string; // default "+"
 	bareEstimate: boolean; // read a lone "2h" / "30m" as an estimate
@@ -12,7 +13,8 @@ export interface ShorthandOptions {
 }
 
 export const DEFAULT_SHORTHAND: ShorthandOptions = {
-	startChar: "@",
+	scheduledChar: "@",
+	startChar: "$",
 	dueChar: "!",
 	estimateChar: "+",
 	bareEstimate: true,
@@ -102,10 +104,11 @@ export function convertShorthand(line: string, opt: ShorthandOptions, today: Dat
 
 	// Dates: @tomorrow / !fri (ignored right after a letter/digit, e.g. a@b.com)
 	const triggers: [string, Field][] = [
+		[toHalfWidth(opt.scheduledChar), "scheduled"],
 		[toHalfWidth(opt.startChar), "start"],
 		[toHalfWidth(opt.dueChar), "due"],
 	];
-	const symbols = [opt.startChar, opt.dueChar, opt.estimateChar].map(toHalfWidth).filter(Boolean).map(esc).join("");
+	const symbols = [opt.scheduledChar, opt.startChar, opt.dueChar, opt.estimateChar].map(toHalfWidth).filter(Boolean).map(esc).join("");
 	const lead = `(^|[^A-Za-z0-9._%+\\-${symbols}])`;
 	for (const [ch, field] of triggers) {
 		if (!ch) continue;
@@ -113,6 +116,7 @@ export function convertShorthand(line: string, opt: ShorthandOptions, today: Dat
 		let r: RegExpExecArray | null;
 		while ((r = re.exec(norm))) {
 			const wordStart = r.index + r[1].length + ch.length;
+			if (/^\d+\.\d/.test(r[2])) continue; // "$1.50" is a price, not a date
 			const p = parseDatePrefix(norm.slice(wordStart, wordStart + r[2].length), today, opt.dayFirst);
 			if (p) hits.push({ from: r.index + r[1].length, to: wordStart + p.length, field, value: p.date });
 		}
@@ -152,7 +156,7 @@ export function convertShorthand(line: string, opt: ShorthandOptions, today: Dat
 	for (const h of [...hits].sort((a, b) => b.from - a.from)) nb = nb.slice(0, h.from) + "\uE000" + nb.slice(h.to);
 	nb = nb.replace(/[ \t\u3000]*\uE000[ \t\u3000\uE000]*/g, " ");
 	let out = head + nb;
-	for (const f of ["estimate", "start", "due"] as Field[]) {
+	for (const f of ["estimate", "start", "scheduled", "due"] as Field[]) {
 		const h = chosen.get(f);
 		if (h) out = setLineField(out, f, h.value);
 	}

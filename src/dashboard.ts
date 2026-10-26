@@ -3,7 +3,7 @@
 import { AbstractInputSuggest, App, ItemView, TFolder, WorkspaceLeaf, debounce } from "obsidian";
 import type TaskHoursPlugin from "./main";
 import { t as tr } from "./i18n";
-import { Task, fmt, formatDuration, onPlainUnitChange, parseTasks, totalMinutes } from "./parse";
+import { DateBasis, Task, fmt, formatDuration, getDateBasis, onPlainUnitChange, parseTasks, totalMinutes } from "./parse";
 import { GroupBy, collectTasks, renderTaskList } from "./ui";
 
 export const DASHBOARD_VIEW = "task-hours-dashboard";
@@ -14,8 +14,21 @@ type Period = "carry" | "today" | "tomorrow" | "week" | "nostart";
 const PERIOD_IDS: Period[] = ["carry", "today", "tomorrow", "week", "nostart"];
 export const RANGE_DAYS = [7, 14, 30] as const;
 export type RangeDays = (typeof RANGE_DAYS)[number];
-const periods = (n: number) =>
-	PERIOD_IDS.map((id) => ({ id, label: tr(`dash.${id}`, { n }), hint: tr(`dash.${id}Hint`, { n }) }));
+// Labels and hints name the date the dashboard totals by: ⏳ scheduled, 🛫 start or 📅 due
+const periods = (n: number) => {
+	const b = getDateBasis();
+	const sfx = b === "scheduled" ? "S" : b === "due" ? "D" : "";
+	return PERIOD_IDS.map((id) => ({
+		id,
+		label:
+			id === "nostart" && b !== "start"
+				? tr(b === "due" ? "dash.nodue" : "dash.nosched")
+				: id === "carry" && b === "due"
+					? tr("dash.overdue")
+					: tr(`dash.${id}`, { n }),
+		hint: tr(`dash.${id}Hint${sfx}`, { n }),
+	}));
+};
 
 function addDays(ymd: string, n: number): string {
 	const [y, m, d] = ymd.split("-").map(Number);
@@ -187,6 +200,7 @@ export class DashboardView extends ItemView {
 		const today = fmt(new Date());
 		const days = this.plugin.settings.dashboardDays;
 		const open = (await collectTasks(this.app, this.targetFiles(), parseTasks)).filter((t) => !t.done);
+		this.renderBasisSwitch(el);
 		const tiles = el.createDiv({ cls: "task-hours-tiles" });
 		for (const p of periods(days)) {
 			const ts = open.filter((t) => inPeriod(t, p.id, today, days));
@@ -221,6 +235,25 @@ export class DashboardView extends ItemView {
 		const group: GroupBy = this.period === "week" || this.period === "carry" ? "start" : "none";
 		renderTaskList(this.app, el, list, { group, showFile: true });
 		el.createDiv({ cls: "task-hours-tip", text: tr("dash.tip") });
+	}
+
+	/** ⏳ scheduled / 🛫 start / 📅 due: which date the tiles total by (same as the setting) */
+	private renderBasisSwitch(parent: HTMLElement) {
+		const bar = parent.createDiv({ cls: "task-hours-range task-hours-basis", attr: { role: "group", "aria-label": tr("set.dateBasis") } });
+		const opts: [DateBasis, string][] = [
+			["scheduled", tr("set.basisScheduled")],
+			["start", tr("set.basisStart")],
+			["due", tr("set.basisDue")],
+		];
+		for (const [b, label] of opts) {
+			const btn = bar.createEl("button", { cls: "task-hours-range-btn", text: label });
+			if (b === this.plugin.settings.dateBasis) btn.addClass("is-active");
+			btn.addEventListener("click", () => {
+				if (b === this.plugin.settings.dateBasis) return;
+				this.plugin.settings.dateBasis = b;
+				void this.plugin.saveSettings().then(() => this.renderBody());
+			});
+		}
 	}
 
 	/** 7 / 14 / 30 days, shown above the list when the range tile is selected */

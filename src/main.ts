@@ -22,7 +22,7 @@ import { Lang, setLang, t as tr } from "./i18n";
 import { dateField } from "./calendar";
 import { CodeBlockSuggest } from "./fence";
 import { QuerySuggest } from "./qsuggest";
-import { PlainUnit, Query, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
+import { DateBasis, PlainUnit, Query, setDateBasis, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
 import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
 import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList, setUiApp } from "./ui";
@@ -40,10 +40,12 @@ export interface TaskHoursSettings extends ShorthandOptions {
 	dashboardDays: RangeDays; // length of the "next N days" tile
 	language: "auto" | Lang;
 	plainUnit: PlainUnit; // a plain number after ⏱️ in a note
+	dateBasis: DateBasis; // plan by ⏳ scheduled or 🛫 start
 }
 
 const DEFAULT_SETTINGS: TaskHoursSettings = {
-	startChar: "@",
+	scheduledChar: "@", // ⏳ the date used most, on the easiest key
+	startChar: "$", // 🛫
 	dueChar: "!",
 	estimateChar: "+",
 	bareEstimate: true,
@@ -57,6 +59,7 @@ const DEFAULT_SETTINGS: TaskHoursSettings = {
 	dashboardDays: 14,
 	language: "auto",
 	plainUnit: "h",
+	dateBasis: "scheduled",
 };
 
 
@@ -68,6 +71,7 @@ export default class TaskHoursPlugin extends Plugin {
 		await this.loadSettings();
 		setUiApp(this.app);
 		setPlainUnit(this.settings.plainUnit);
+		setDateBasis(this.settings.dateBasis);
 		const l = this.settings.language;
 		setLang(l === "auto" ? (getLanguage().startsWith("ja") ? "ja" : "en") : l);
 
@@ -141,6 +145,16 @@ export default class TaskHoursPlugin extends Plugin {
 	async loadSettings() {
 		const saved = (await this.loadData()) as (Partial<TaskHoursSettings> & { dashboardFolder?: string | null }) | null;
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, saved);
+		// Up to 1.3.x, @ wrote 🛫 and the dashboard totalled by 🛫. People who already use Task Hours keep that:
+		// @ stays 🛫 start, and ⏳ scheduled gets $ (they can swap them in settings)
+		if (saved) {
+			if (!saved.dateBasis) this.settings.dateBasis = "start";
+			if (saved.scheduledChar === undefined) {
+				this.settings.startChar = saved.startChar ?? "@";
+				const taken = [this.settings.startChar, this.settings.dueChar, this.settings.estimateChar];
+				this.settings.scheduledChar = ["$", "&", "%"].find((c) => !taken.includes(c)) ?? "$";
+			}
+		}
 		// 1.2.x and earlier kept one folder
 		if (saved && !saved.dashboardFolders && typeof saved.dashboardFolder === "string") this.settings.dashboardFolders = [saved.dashboardFolder];
 		delete (this.settings as { dashboardFolder?: unknown }).dashboardFolder;
@@ -151,6 +165,7 @@ export default class TaskHoursPlugin extends Plugin {
 	async saveSettings() {
 		await this.saveData(this.settings);
 		setPlainUnit(this.settings.plainUnit);
+		setDateBasis(this.settings.dateBasis);
 	}
 }
 
@@ -183,6 +198,7 @@ function insertSummaryAtTop(app: App, editor: Editor, file: TFile) {
 class AddTaskModal extends Modal {
 	private name = "";
 	private picker!: EstimatePicker;
+	private scheduled = "";
 	private start = "";
 	private due = "";
 
@@ -202,10 +218,11 @@ class AddTaskModal extends Modal {
 		const estRow = new Setting(contentEl).setName(tr("add.estimate"));
 		estRow.settingEl.addClass("task-hours-estrow");
 		this.picker = new EstimatePicker(estRow.controlEl, null, { onEnter: () => this.submit() });
-		const startLabel = "🛫 " + tr("add.start");
-		const dueLabel = "📅 " + tr("add.due");
-		dateField(this.app, new Setting(contentEl).setName(startLabel).controlEl, startLabel, "", (v) => (this.start = v));
-		dateField(this.app, new Setting(contentEl).setName(dueLabel).controlEl, dueLabel, "", (v) => (this.due = v));
+		const row = (label: string, set: (v: string) => void) =>
+			dateField(this.app, new Setting(contentEl).setName(label).controlEl, label, "", set);
+		row("⏳ " + tr("add.scheduled"), (v) => (this.scheduled = v));
+		row("🛫 " + tr("add.start"), (v) => (this.start = v));
+		row("📅 " + tr("add.due"), (v) => (this.due = v));
 		new Setting(contentEl).addButton((b) =>
 			b
 				.setButtonText(tr("add.submit"))
@@ -231,11 +248,11 @@ class AddTaskModal extends Modal {
 			new Notice(tr("add.badEstimate"));
 			return;
 		}
-		if (this.start && this.due && this.start > this.due) {
-			new Notice(tr("add.startAfterDue"));
+		if (this.due && ((this.start && this.start > this.due) || (this.scheduled && this.scheduled > this.due))) {
+			new Notice(tr("add.dateAfterDue"));
 			return;
 		}
-		this.onSubmit(buildTaskLine(this.name, estimate ?? "", this.start, this.due));
+		this.onSubmit(buildTaskLine(this.name, estimate ?? "", this.scheduled, this.start, this.due));
 		this.close();
 	}
 
@@ -365,13 +382,15 @@ type SettingKey =
 	| "dateSuggest"
 	| "blockSuggest"
 	| "querySuggest"
+	| "scheduledChar"
 	| "startChar"
 	| "dueChar"
 	| "estimateChar"
 	| "bareEstimate"
 	| "dayFirst"
 	| "language"
-	| "plainUnit";
+	| "plainUnit"
+	| "dateBasis";
 
 class TaskHoursSettingTab extends PluginSettingTab {
 	constructor(
@@ -390,9 +409,13 @@ class TaskHoursSettingTab extends PluginSettingTab {
 			{ name: tr("set.blockSuggest"), desc: tr("set.blockSuggestDesc"), control: { type: "toggle", key: "blockSuggest" } },
 			{ name: tr("set.querySuggest"), desc: tr("set.querySuggestDesc"), control: { type: "toggle", key: "querySuggest" } },
 			{
-				name: tr("set.startChar"),
+				name: tr("set.scheduledChar"),
 				desc: tr("set.startCharDesc"),
-				control: { type: "text", key: "startChar", placeholder: "@", validate: notEmpty },
+				control: { type: "text", key: "scheduledChar", placeholder: "@", validate: notEmpty },
+			},
+			{
+				name: tr("set.startChar"),
+				control: { type: "text", key: "startChar", placeholder: "$", validate: notEmpty },
 			},
 			{ name: tr("set.dueChar"), control: { type: "text", key: "dueChar", placeholder: "!", validate: notEmpty } },
 			{
@@ -402,6 +425,15 @@ class TaskHoursSettingTab extends PluginSettingTab {
 			},
 			{ name: tr("set.bare"), desc: tr("set.bareDesc"), control: { type: "toggle", key: "bareEstimate" } },
 			{ name: tr("set.dayFirst"), desc: tr("set.dayFirstDesc"), control: { type: "toggle", key: "dayFirst" } },
+			{
+				name: tr("set.dateBasis"),
+				desc: tr("set.dateBasisDesc"),
+				control: {
+					type: "dropdown",
+					key: "dateBasis",
+					options: { scheduled: tr("set.basisScheduled"), start: tr("set.basisStart"), due: tr("set.basisDue") },
+				},
+			},
 			{
 				name: tr("set.plainUnit"),
 				desc: tr("set.plainUnitDesc"),
@@ -429,7 +461,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 
 	async setControlValue(key: string, value: unknown): Promise<void> {
 		const s = this.plugin.settings as unknown as Record<string, unknown>;
-		s[key] = typeof value === "string" && (key === "startChar" || key === "dueChar" || key === "estimateChar") ? value.trim() : value;
+		s[key] = typeof value === "string" && (key === "scheduledChar" || key === "startChar" || key === "dueChar" || key === "estimateChar") ? value.trim() : value;
 		await this.plugin.saveSettings();
 	}
 
@@ -452,7 +484,7 @@ class TaskHoursSettingTab extends PluginSettingTab {
 						save();
 					})
 				);
-		const symbol = (name: string, desc: string, key: "startChar" | "dueChar" | "estimateChar") =>
+		const symbol = (name: string, desc: string, key: "scheduledChar" | "startChar" | "dueChar" | "estimateChar") =>
 			new Setting(containerEl)
 				.setName(name)
 				.setDesc(desc)
@@ -469,11 +501,26 @@ class TaskHoursSettingTab extends PluginSettingTab {
 		toggle(tr("set.suggest"), tr("set.suggestDesc"), "dateSuggest");
 		toggle(tr("set.blockSuggest"), tr("set.blockSuggestDesc"), "blockSuggest");
 		toggle(tr("set.querySuggest"), tr("set.querySuggestDesc"), "querySuggest");
-		symbol(tr("set.startChar"), tr("set.startCharDesc"), "startChar");
+		symbol(tr("set.scheduledChar"), tr("set.startCharDesc"), "scheduledChar");
+		symbol(tr("set.startChar"), "", "startChar");
 		symbol(tr("set.dueChar"), "", "dueChar");
 		symbol(tr("set.estimateChar"), tr("set.estimateCharDesc"), "estimateChar");
 		toggle(tr("set.bare"), tr("set.bareDesc"), "bareEstimate");
 		toggle(tr("set.dayFirst"), tr("set.dayFirstDesc"), "dayFirst");
+		new Setting(containerEl)
+			.setName(tr("set.dateBasis"))
+			.setDesc(tr("set.dateBasisDesc"))
+			.addDropdown((d) =>
+				d
+					.addOption("scheduled", tr("set.basisScheduled"))
+					.addOption("start", tr("set.basisStart"))
+					.addOption("due", tr("set.basisDue"))
+					.setValue(s.dateBasis)
+					.onChange((v) => {
+						s.dateBasis = v as DateBasis;
+						save();
+					})
+			);
 		new Setting(containerEl)
 			.setName(tr("set.plainUnit"))
 			.setDesc(tr("set.plainUnitDesc"))

@@ -1,14 +1,16 @@
 # Task Hours
 
-Add time estimates to your tasks and see how many hours you've planned — per note, per folder, and per start date.
+Add time estimates to your tasks and see how many hours you've planned — per note, per folder, and per day you've scheduled them.
 
-It uses the same format as the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin (🛫 start date, 📅 due date) and adds ⏱️ for the estimate:
+It uses the same format as the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin (⏳ scheduled date, 🛫 start date, 📅 due date) and adds ⏱️ for the estimate:
 
 ```markdown
-- [ ] Draft the proposal ⏱️ 1h30m 🛫 2026-10-06 📅 2026-10-09
+- [ ] Draft the proposal ⏱️ 1h30m ⏳ 2026-10-06 📅 2026-10-09
 ```
 
 Tasks is not required, but the two work well together.
+
+**Three dates, as in Tasks.** ⏳ *scheduled* is the day you plan to work on a task, 🛫 *start* the day it becomes possible to start, 📅 *due* the deadline. Each has its own quick-entry symbol — `@` scheduled, `$` start, `!` due — and the dashboard can total by any of them (⏳ by default). If you used Task Hours before 1.4.0, nothing changes for you: `@` still writes 🛫 start, ⏳ scheduled gets `$`, and the dashboard stays on 🛫 — swap them in settings whenever you like.
 
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png" alt="Tasks with estimates, and the dashboard totalling them by start date">
 
@@ -25,7 +27,7 @@ You don't need to type emoji. In a task, type `+` for the estimate, `@` for the 
 becomes
 
 ```markdown
-- [ ] Lunch with Sam ⏱️ 2h 🛫 2026-10-06 📅 2026-10-09
+- [ ] Lunch with Sam ⏱️ 2h ⏳ 2026-10-06 📅 2026-10-09
 ```
 
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif" alt="Typing + @ ! in a task line and picking from the suggestions" width="800">
@@ -33,8 +35,9 @@ becomes
 | Type | Means |
 |---|---|
 | `+` | Estimate. `+` alone lists 15m, 30m, 1h, 2h…; `+40` → 40 min; `+2` → 2 h; `+1.5` → 1 h 30 min; `+2h` `+1h30m` `+40m` as written |
-| `@tomorrow` | Start date |
-| `!fri` | Due date |
+| `@tomorrow` | Scheduled date ⏳ |
+| `$mon` | Start date 🛫 |
+| `!fri` | Due date 📅 |
 
 - `@` and `!` suggest dates; you can also choose **Pick from calendar…**.
 - You can skip the list and just keep typing: `+40 @tomorrow` is converted when you press Enter or move to another line. A plain `2h`, `30m` or `(2h)` also counts as an estimate there.
@@ -61,7 +64,7 @@ becomes
 - A lone `2h` when the task already has ⏱️. Use `(3h)` to replace it.
 - Anything inside a code block.
 
-In settings you can turn off automatic conversion or suggestions, change the `@` / `!` symbols, or require parentheses for estimates.
+In settings you can turn off automatic conversion or suggestions, change the `@` / `$` / `!` / `+` symbols, or require parentheses for estimates.
 
 ### Code block names
 
@@ -76,16 +79,16 @@ Click the timer icon in the ribbon to open the dashboard in the right sidebar.
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif" alt="Choosing a folder, switching tiles, and editing an estimate and a date from the dashboard" width="900">
 
 1. Choose a folder at the top. Pick **/ (entire vault)** to include every note. You can add more folders — each one shows as a chip, and × removes it. Use **+ Leave out a folder** to skip folders inside them (an archive, for example).
-2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 14 days · No start date**.
+2. You'll see the total hours and number of open tasks for **Carry-over · Today · Tomorrow · Next 14 days · No scheduled date**. The switch above them chooses the date they total by: **⏳ Scheduled · 🛫 Start · 📅 Due** (with 📅, *Carry-over* becomes *Overdue*).
 3. Click a tile to list its tasks. The *next days* tile is grouped by day with subtotals, and a **7 / 14 / 30 days** switch above the list changes its range (remembered for next time).
 
 The folders are remembered, so next time it's one click.
 
-**Carry-over** shows tasks whose start date has passed but aren't done yet. Change their start date to bring them into today's total.
+**Carry-over** shows tasks whose scheduled date has passed but aren't done yet. Reschedule them to bring them into today's total.
 
 ### Edit right from the list
 
-- Click **🛫 start** or **📅 due** to pick a new date on a large calendar (with Today / Tomorrow / Remove date buttons). The task line in the note is updated.
+- Click **⏳ scheduled**, **🛫 start** or **📅 due** to pick a new date on a large calendar (with Today / Tomorrow / Remove date buttons). The task line in the note is updated.
 - Click **⏱️** to change the estimate: type a number, choose **h** or **min** (a number of 10 or more is assumed to be minutes, as with `+`), or click one of the quick picks.
 
   <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png" alt="The estimate editor: a number, an h / min switch, a preview and quick picks" width="500">
@@ -143,7 +146,7 @@ Each task is shown like in Tasks: the description, its fields, and a link to the
 Everything shown can be changed right there: click ⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ to pick a new date (or estimate), click the priority to choose another, click 🔁 to edit the recurrence rule. The ✏️ pencil opens all of them at once.
 
 <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif" alt="Completing tasks and changing dates in query results; totals update straight away" width="900">
- Task Hours can **add** only the estimate, start date and due date; the other fields can be changed or removed when the task already has them (add them with Tasks).
+ Task Hours can **add** only the estimate, ⏳ scheduled, 🛫 start and 📅 due dates; the other fields can be changed or removed when the task already has them (add them with Tasks).
 
 ### Older syntax
 
@@ -169,9 +172,9 @@ show: summary
 ## Details
 
 - `[x]`, `[X]` and `[-]` (cancelled) count as done. `[/]` and other statuses count as open.
-- The start date is 🛫. If a task has no 🛫 but has ⏳ (Tasks' scheduled date), that is used instead.
+- The dashboard and older-style blocks total by the date chosen in **Total by** (⏳ by default).  A task without that date is listed under *No … date*. Tasks-syntax queries always mean exactly what Tasks means (`scheduled`, `starts`).
 - Estimate units: `h` `hr` `hrs` `hour(s)` `m` `min` `mins` `minute(s)`, also `時間` `分`. A plain number typed directly after ⏱️ in a note (`⏱️ 50`) means hours by default; change this in settings under **Plain number after ⏱️** to minutes, or to *Auto* (10 or more = minutes, as with `+`). In the estimate editor you choose h or min.
-- When used with Tasks, ⏱️ must come before 🛫 and 📅. Quick entry, the form, and list edits all place it there for you.
+- When used with Tasks, ⏱️ must come before 🛫, ⏳ and 📅. Quick entry, the form, and list edits all place it there for you.
 - The interface follows Obsidian's language (English or Japanese). You can override it in settings.
 
 ## Privacy

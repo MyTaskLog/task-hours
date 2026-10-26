@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.0
+
+- Three date symbols, one for each Tasks date: `@` ⏳ scheduled, `$` 🛫 start, `!` 📅 due — each with its own suggestions, and each can be changed in settings. (`$1.50` and other prices are left alone.)
+- The dashboard can total by ⏳ scheduled, 🛫 start or 📅 due — switch it at the top of the dashboard or in settings (**Total by**). ⏳ is the default; with 📅, *Carry-over* becomes *Overdue*.
+- The dashboard counts a task only by the chosen date: a task with no ⏳ is under *No scheduled date* even if it has 🛫 (previously 🛫 and ⏳ stood in for each other).
+- The ✏️ dialog and the add-task form have all three dates; dashboard rows show ⏳ (click to add), 🛫 when the task has one, and 📅.
+- If you already use Task Hours, nothing changes: `@` still writes 🛫 start, ⏳ scheduled gets `$`, and the dashboard stays on 🛫. Swap them in settings whenever you like.
+- The dashboard in the right sidebar uses larger text.
+- Japanese: 🛫 is now called 着手可能日.
+- Tasks-syntax queries are unchanged.
+
 ## 1.3.4
 
 - The query suggestions inside `task-hours` / `tasks` blocks, and the block-name suggestions after ```` ``` ````, use the same large text as the other suggestion lists.
