@@ -12,7 +12,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 **3つの日付（Tasks と同じ）**：⏳ 予定日（scheduled）は「その作業をやる予定の日」、🛫 着手可能日（start）は「着手できるようになる日」、📅 納期（due）は締め切りです。それぞれに簡易入力の記号があり（`@` 予定日・`$` 着手可能日・`!` 納期）、ダッシュボードはどの日付でも集計できます（初期設定は ⏳ 予定日）。1.4.0 より前から使っている場合は今までどおりで、`@` は 🛫 着手可能日、⏳ 予定日は `$`、ダッシュボードは 🛫 基準のままです。設定でいつでも入れ替えられます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png" alt="見積付きのタスクと、開始日ごとに合計するダッシュボード">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png?v=1.4.0" alt="見積付きのタスクと、予定日ごとに合計するダッシュボード">
 
 [English](README.md)
 
@@ -30,7 +30,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 - [ ] 昼食 ⏱️ 2h ⏳ 2026-10-06 📅 2026-10-09
 ```
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif" alt="タスク行で + @ ! を打って候補から選ぶ様子" width="800">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif?v=1.4.0" alt="タスク行で + @ $ ! を打って候補から選ぶ様子" width="800">
 
 | 書き方 | 意味 |
 |---|---|
@@ -79,7 +79,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 左リボンのタイマーアイコンを押すと、右サイドバーに開きます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif" alt="フォルダを選び、枠を切り替え、見積と日付をその場で変更する様子" width="900">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif?v=1.4.0" alt="フォルダを選び、枠や期間を切り替える様子" width="900">
 
 1. 上の欄で集計するフォルダを選びます。`/（保管庫全体）` を選ぶと全ノートが対象になります。フォルダは複数追加でき、選んだものは小さな札で表示されます（× で外せます）。「+ 除外するフォルダ」で、その中の一部のフォルダ（アーカイブなど）を集計から外せます。
 2. 「繰越・今日・明日・14日間・予定日なし」ごとに、未完了タスクの合計時間と件数が出ます。上の切り替えで、集計する日付を **⏳ 予定日・🛫 着手可能日・📅 納期** から選べます（📅 のときは「繰越」が「期限切れ」になります）。
@@ -94,7 +94,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 - **⏳ 予定日・🛫 着手可能日・📅 納期** をクリックすると大きなカレンダーが開きます（「今日」「明日」「日付を消す」ボタン付き）。日付を選ぶと、元のノートの行が書き換わります。
 - **⏱️ 見積** をクリックすると見積の入力画面が開きます。数字を入れて **h**（時間）か **min**（分）を選ぶか、よく使う時間のボタンを押します（`+` と同じく、10以上の数字は自動で min になります）。
 
-  <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png" alt="見積の入力画面：数字、h / min の切り替え、プレビュー、よく使う時間" width="500">
+  <img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/estimate-editor.png?v=1.4.0" alt="見積の入力画面：数字、h / min の切り替え、プレビュー、よく使う時間" width="600">
 
 - チェックボックスで完了／未完了を切り替えられます。
 - タスク名をクリックすると、元のノートの該当行へ移動します。
@@ -148,7 +148,7 @@ Tasks と同じく保管庫全体が対象です。中身が空のブロック�
 
 表示されている項目はその場で変更できます。⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ をクリックすると日付（見積）を変更でき、優先度をクリックすると別の優先度を選べ、🔁 をクリックすると繰り返しのルールを書き換えられます。✏️（鉛筆）を押すと、まとめて編集する画面が開きます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif" alt="一覧でタスクを完了・日付を変更すると、合計がすぐ変わる様子" width="900">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif?v=1.4.0" alt="一覧で日付・優先度・繰り返し・見積を変更すると、合計がすぐ変わる様子" width="900">
 Task Hours が**新しく追加できるのは見積・予定日・着手可能日・納期だけ**です。そのほかの項目は、タスクにすでに書かれている場合だけ変更・削除できます（追加は Tasks で行ってください）。
 
 ### 以前の書き方
