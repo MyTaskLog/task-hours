@@ -106,13 +106,14 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 ````markdown
 ```task-hours
 not done
-has start date
-due before next week
-group by folder
+has estimate
+folder includes Projects/
+group by scheduled
+show estimate total
 ```
 ````
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png" alt="開始日ごとのグループと、見出し横の見積小計" width="800">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png?v=1.4.0" alt="予定日ごとのグループと、見積の合計・見出し横の小計" width="800">
 
 Tasks と同じく保管庫全体が対象です。中身が空のブロックは、空の `tasks` ブロックと同じく全タスクを表示します。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
 
@@ -120,7 +121,7 @@ Tasks と同じく保管庫全体が対象です。中身が空のブロック�
 
 命令を覚えていなくても大丈夫です。`task-hours` ブロック（`tasks` ブロックでも）の中で打ち始めると、次に書ける言葉が説明付きで候補に出ます。例：`gr` → **group by** → **folder**、`due` → **before** → **next week**。`folder includes`・`path includes`・`filename includes`・`root includes` のあとには、保管庫のフォルダやファイルが候補に出て、打つほど絞り込まれます。`tasks` ブロックでは Tasks の命令だけ、`task-hours` ブロックでは見積の命令（**Task Hours** の印付き）も出ます。設定の「クエリの命令を候補に出す」でオフにできます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif" alt="入力候補を使って task-hours のクエリを書く様子" width="860">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif?v=1.4.0" alt="入力候補を使って task-hours のクエリを書く様子（ブロック名・条件・フォルダ・group by・show estimate total）" width="860">
 
 使える命令：
 

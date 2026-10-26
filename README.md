@@ -103,13 +103,14 @@ A `task-hours` code block takes the same query language as the [Tasks](https://p
 ````markdown
 ```task-hours
 not done
-has start date
-due before next week
-group by folder
+has estimate
+folder includes Projects/
+group by scheduled
+show estimate total
 ```
 ````
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png" alt="Query results grouped by start date, with estimate subtotals next to each heading" width="800">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png?v=1.4.0" alt="Query results grouped by scheduled date, with the estimate total and a subtotal next to each heading" width="800">
 
 It searches the whole vault, like Tasks — an empty block lists every task, just as an empty `tasks` block does. The block name works in any case: `task-hours`, `Task-Hours`, `TASK-HOURS`, `taskhours`. (A space, as in `Task Hours`, isn't possible — Markdown only reads the first word as the block name.)
 
@@ -117,7 +118,7 @@ It searches the whole vault, like Tasks — an empty block lists every task, jus
 
 You don't need to remember the instructions. Inside a `task-hours` block — and inside `tasks` blocks too — start typing and the next possible words are suggested, each with a short explanation: `gr` → **group by** → **folder**, `due` → **before** → **next week**. After `folder includes`, `path includes`, `filename includes` or `root includes`, your vault's folders and files are listed and narrowed as you type. In a `tasks` block only Tasks' own instructions are offered; a `task-hours` block also offers the estimate ones (marked **Task Hours**). Turn this off with **Suggest query instructions** in settings.
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif" alt="Writing a task-hours query with suggestions" width="860">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif?v=1.4.0" alt="Writing a task-hours query with suggestions: block name, filters, folders, group by and show estimate total" width="860">
 
 Supported instructions:
 
