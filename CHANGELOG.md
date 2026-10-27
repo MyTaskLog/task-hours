@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.1
+
+- Fix: completing a repeating task (🔁) from a Task Hours list did not create its next occurrence. With Tasks installed, the checkbox now goes through Tasks, exactly like a `tasks` block: the next occurrence is added, and Tasks' settings (done date, status cycle, 🏁 on completion) apply.
+
 ## 1.4.0
 
 - Three date symbols, one for each Tasks date: `@` ⏳ scheduled, `$` 🛫 start, `!` 📅 due — each with its own suggestions, and each can be changed in settings. (`$1.50` and other prices are left alone.)

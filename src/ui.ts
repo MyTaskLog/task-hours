@@ -60,7 +60,8 @@ async function rewrite(app: App, t: Task, fn: (line: string) => string): Promise
 		const cur = lines[t.line]?.replace(/\r$/, "");
 		if (cur !== t.raw.replace(/\r$/, "")) return data;
 		const cr = lines[t.line].endsWith("\r") ? "\r" : "";
-		lines[t.line] = fn(cur) + cr;
+		// fn may return more than one line (Tasks adds the next occurrence of a repeating task)
+		lines[t.line] = fn(cur).split("\n").join(cr + "\n") + cr;
 		ok = true;
 		return lines.join("\n");
 	});
@@ -185,12 +186,35 @@ export class EditTaskModal extends Modal {
 	}
 }
 
+/** The Tasks plugin's public API (v1), when Tasks is installed and enabled */
+interface TasksApiV1 {
+	executeToggleTaskDoneCommand?: (line: string, path: string) => string;
+}
+function tasksApi(app: App): TasksApiV1 | null {
+	const plugins = (app as unknown as { plugins?: { getPlugin?: (id: string) => unknown } }).plugins;
+	const tasks = plugins?.getPlugin?.("obsidian-tasks-plugin") as { apiV1?: TasksApiV1 } | null | undefined;
+	return tasks?.apiV1 ?? null;
+}
+
+/**
+ * Complete / reopen a task. With Tasks installed, Tasks does it — exactly as clicking the checkbox
+ * in a tasks block: a repeating task (🔁) gets its next occurrence, and Tasks' own settings
+ * (done date, status cycle, 🏁 on completion) apply. Without Tasks, the box is ticked and ✅ added.
+ */
 export function toggleDone(app: App, t: Task) {
-	return rewrite(app, t, (line) =>
-		t.done
+	const toggle = tasksApi(app)?.executeToggleTaskDoneCommand;
+	return rewrite(app, t, (line) => {
+		if (toggle) {
+			try {
+				return toggle(line, t.path);
+			} catch {
+				/* fall back to the simple toggle below */
+			}
+		}
+		return t.done
 			? line.replace(/\[(.)\]/, "[ ]").replace(/\s*✅️?\s*\d{4}-\d{2}-\d{2}/u, "")
-			: line.replace(/\[(.)\]/, "[x]") + ` ✅ ${fmt(new Date())}`
-	);
+			: line.replace(/\[(.)\]/, "[x]") + ` ✅ ${fmt(new Date())}`;
+	});
 }
 
 export async function openTask(app: App, t: Task) {
