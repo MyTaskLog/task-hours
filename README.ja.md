@@ -12,7 +12,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 **3つの日付（Tasks と同じ）**：⏳ 予定日（scheduled）は「その作業をやる予定の日」、🛫 着手可能日（start）は「着手できるようになる日」、📅 納期（due）は締め切りです。それぞれに簡易入力の記号があり（`@` 予定日・`$` 着手可能日・`!` 納期）、ダッシュボードはどの日付でも集計できます（初期設定は ⏳ 予定日）。1.4.0 より前から使っている場合は今までどおりで、`@` は 🛫 着手可能日、⏳ 予定日は `$`、ダッシュボードは 🛫 基準のままです。設定でいつでも入れ替えられます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png?v=1.4.0" alt="見積付きのタスクと、予定日ごとに合計するダッシュボード">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.png?v=1.4.0b" alt="見積付きのタスクと、予定日ごとに合計するダッシュボード">
 
 [English](README.md)
 
@@ -30,7 +30,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 - [ ] 昼食 ⏱️ 2h ⏳ 2026-10-06 📅 2026-10-09
 ```
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif?v=1.4.0" alt="タスク行で + @ $ ! を打って候補から選ぶ様子" width="800">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/quick-entry.gif?v=1.4.0b" alt="タスク行で + @ $ ! を打って候補から選ぶ様子。Tasks の画面で作ったタスクにも見積を付けられる" width="800">
 
 | 書き方 | 意味 |
 |---|---|
@@ -79,7 +79,7 @@ Tasks プラグインがなくても使えますが、一緒に使うとより�
 
 左リボンのタイマーアイコンを押すと、右サイドバーに開きます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif?v=1.4.0" alt="フォルダを選び、枠や期間を切り替える様子" width="900">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/dashboard.gif?v=1.4.0b" alt="フォルダを選び、基準の日付・枠・期間を切り替え、その場で日付を変更・完了する様子" width="900">
 
 1. 上の欄で集計するフォルダを選びます。`/（保管庫全体）` を選ぶと全ノートが対象になります。フォルダは複数追加でき、選んだものは小さな札で表示されます（× で外せます）。「+ 除外するフォルダ」で、その中の一部のフォルダ（アーカイブなど）を集計から外せます。
 2. 「繰越・今日・明日・14日間・予定日なし」ごとに、未完了タスクの合計時間と件数が出ます。上の切り替えで、集計する日付を **⏳ 予定日・🛫 着手可能日・📅 納期** から選べます（📅 のときは「繰越」が「期限切れ」になります）。
@@ -113,7 +113,7 @@ show estimate total
 ```
 ````
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png?v=1.4.0" alt="予定日ごとのグループと、見積の合計・見出し横の小計" width="800">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query.png?v=1.4.0b" alt="予定日ごとのグループと、見積の合計・見出し横の小計" width="800">
 
 Tasks と同じく保管庫全体が対象です。中身が空のブロックは、空の `tasks` ブロックと同じく全タスクを表示します。ブロック名は大文字・小文字どちらでも動きます（`task-hours`・`Task-Hours`・`TASK-HOURS`・`taskhours`）。`Task Hours` のように空白を入れることはできません。Markdown では最初の単語だけがブロック名として扱われるためです。
 
@@ -121,7 +121,7 @@ Tasks と同じく保管庫全体が対象です。中身が空のブロック�
 
 命令を覚えていなくても大丈夫です。`task-hours` ブロック（`tasks` ブロックでも）の中で打ち始めると、次に書ける言葉が説明付きで候補に出ます。例：`gr` → **group by** → **folder**、`due` → **before** → **next week**。`folder includes`・`path includes`・`filename includes`・`root includes` のあとには、保管庫のフォルダやファイルが候補に出て、打つほど絞り込まれます。`tasks` ブロックでは Tasks の命令だけ、`task-hours` ブロックでは見積の命令（**Task Hours** の印付き）も出ます。設定の「クエリの命令を候補に出す」でオフにできます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif?v=1.4.0" alt="入力候補を使って task-hours のクエリを書く様子（ブロック名・条件・フォルダ・group by・show estimate total）" width="860">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-suggest.gif?v=1.4.0b" alt="入力候補を使って task-hours のクエリを書く様子（ブロック名・条件・フォルダ・group by・show estimate total）" width="860">
 
 使える命令：
 
@@ -149,7 +149,7 @@ Tasks と同じく保管庫全体が対象です。中身が空のブロック�
 
 表示されている項目はその場で変更できます。⏱️ / 🛫 / 📅 / ⏳ / ➕ / ✅ / ❌ をクリックすると日付（見積）を変更でき、優先度をクリックすると別の優先度を選べ、🔁 をクリックすると繰り返しのルールを書き換えられます。✏️（鉛筆）を押すと、まとめて編集する画面が開きます。
 
-<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif?v=1.4.0" alt="一覧で日付・優先度・繰り返し・見積を変更すると、合計がすぐ変わる様子" width="900">
+<img src="https://raw.githubusercontent.com/MyTaskLog/task-hours/main/docs/query-edit.gif?v=1.4.0b" alt="一覧で日付・優先度・繰り返し・見積を変更すると、合計がすぐ変わる様子" width="900">
 Task Hours が**新しく追加できるのは見積・予定日・着手可能日・納期だけ**です。そのほかの項目は、タスクにすでに書かれている場合だけ変更・削除できます（追加は Tasks で行ってください）。
 
 ### 以前の書き方
