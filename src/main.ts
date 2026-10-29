@@ -22,10 +22,10 @@ import { Lang, setLang, t as tr } from "./i18n";
 import { dateField } from "./calendar";
 import { CodeBlockSuggest } from "./fence";
 import { QuerySuggest } from "./qsuggest";
-import { DateBasis, PlainUnit, Query, setDateBasis, buildTaskLine, onPlainUnitChange, setPlainUnit, filterTasks, formatDuration, parseQuery, parseTasks, totalMinutes } from "./parse";
+import { DateBasis, PlainUnit, setDateBasis, buildTaskLine, onPlainUnitChange, setPlainUnit, formatDuration, parseTasks, totalMinutes } from "./parse";
 import { ShorthandOptions } from "./shorthand";
 import { isLegacyQuery, parseTQuery, runTQuery } from "./tquery";
-import { collectTasks, filesInFolder, renderQueryGroups, renderTaskList, setUiApp } from "./ui";
+import { collectTasks, renderQueryGroups, setUiApp } from "./ui";
 
 const BLOCK = "task-hours";
 const BLOCK_NAMES = ["task-hours", "Task-Hours", "Task-hours", "TASK-HOURS", "taskhours", "TaskHours", "Taskhours", "TASKHOURS", "task_hours"];
@@ -183,6 +183,9 @@ function insertTaskLine(editor: Editor, line: string) {
 	}
 }
 
+/** This note's open tasks with their estimate total (what "show: summary" used to give) */
+const RETIRED_EXAMPLE = "not done\npath includes {{query.file.path}}\nshow estimate total";
+
 function insertSummaryAtTop(app: App, editor: Editor, file: TFile) {
 	const content = editor.getValue();
 	if (content.includes("```" + BLOCK)) {
@@ -191,7 +194,7 @@ function insertSummaryAtTop(app: App, editor: Editor, file: TFile) {
 	}
 	const fm = app.metadataCache.getFileCache(file)?.frontmatterPosition;
 	const at = fm ? fm.end.line + 1 : 0;
-	const block = "```" + BLOCK + "\nshow: summary\n```\n";
+	const block = "```" + BLOCK + "\n" + RETIRED_EXAMPLE + "\n```\n";
 	editor.replaceRange(block, { line: at, ch: 0 });
 }
 
@@ -284,21 +287,8 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		this.registerInterval(window.setInterval(() => this.refresh(), 10 * 60 * 1000));
 	}
 
-	private targetFiles(q: Query): TFile[] {
-		switch (q.scope.kind) {
-			case "this": {
-				const f = this.app.vault.getAbstractFileByPath(this.ctx.sourcePath);
-				return f instanceof TFile ? [f] : [];
-			}
-			case "all":
-				return this.app.vault.getMarkdownFiles();
-			case "folder":
-				return filesInFolder(this.app, q.scope.path);
-		}
-	}
-
 	async render() {
-		if (isLegacyQuery(this.source)) return this.renderLegacy();
+		if (isLegacyQuery(this.source)) return this.renderRetired();
 		return this.renderTasksQuery();
 	}
 
@@ -341,37 +331,14 @@ class TaskHoursBlock extends MarkdownRenderChild {
 		}
 	}
 
-	/** The original "key: value" syntax */
-	private async renderLegacy() {
-		const q = parseQuery(this.source, new Date());
-		const tasks = filterTasks(await collectTasks(this.app, this.targetFiles(q), parseTasks), q);
+	/** The original "key: value" syntax was retired in 1.5.0: say so, and show what to write instead */
+	private renderRetired() {
 		const el = this.containerEl;
 		el.empty();
-		el.addClass("task-hours");
-
-		if (q.errors.length) {
-			const err = el.createDiv({ cls: "task-hours-error" });
-			q.errors.forEach((e) => err.createDiv({ text: "⚠ " + e }));
-		}
-
-		const total = totalMinutes(tasks);
-		const noEst = tasks.filter((t) => t.minutes === null).length;
-		const head = el.createDiv({ cls: "task-hours-summary" });
-		head.createSpan({ cls: "task-hours-total", text: `⏱️ ${formatDuration(total)}` });
-		const statusKey = ({ open: "sum.open", done: "sum.done", all: "sum.all" } as const)[q.status];
-		head.createSpan({ cls: "task-hours-meta", text: tr(statusKey, { n: tasks.length }) });
-		if (noEst) head.createSpan({ cls: "task-hours-warn", text: tr("sum.noEstimate", { n: noEst }) });
-
-		if (q.show === "summary") return;
-		if (tasks.length === 0) {
-			el.createDiv({ cls: "task-hours-empty", text: tr("sum.empty") });
-			return;
-		}
-		renderTaskList(this.app, el, tasks, {
-			group: q.group,
-			showFile: q.scope.kind !== "this" && q.group !== "file",
-			limit: q.limit,
-		});
+		el.addClass("task-hours-query");
+		const err = el.createDiv({ cls: "task-hours-qerror", attr: { role: "alert" } });
+		err.createDiv({ cls: "task-hours-qerror-title", text: tr("q.retired") });
+		for (const line of RETIRED_EXAMPLE.split("\n")) err.createDiv({ cls: "task-hours-qerror-line", text: line });
 	}
 }
 

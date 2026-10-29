@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0
+
+- The older `key: value` syntax for `task-hours` blocks (`show: summary`, `scope:`, `folder:` …) has been removed; blocks use the Tasks query language only. A block still written the old way shows a notice with what to write instead.
+- **Show estimate total at top of note** now inserts a block in the Tasks syntax: this note's open tasks with their total.
+- Shorter README.
+
 ## 1.4.1
 
 - Fix: completing a repeating task (🔁) from a Task Hours list did not create its next occurrence. With Tasks installed, the checkbox now goes through Tasks, exactly like a `tasks` block: the next occurrence is added, and Tasks' settings (done date, status cycle, 🏁 on completion) apply.
